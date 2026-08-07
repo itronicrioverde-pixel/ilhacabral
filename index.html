@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1a3d2e">
+<title>Rancho — Contas</title>
+<style>
+  :root{
+    --verde:#1a3d2e; --verde2:#245239;
+    --terra:#c47b3a; --terra-cl:#e09b52;
+    --creme:#f5f1e6; --creme2:#ece5d3;
+    --texto:#22281f; --suave:#6b7566; --linha:#d8d0bd;
+    --vermelho:#a63d2f;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--creme);color:var(--texto);padding-bottom:96px}
+  header{
+    background:linear-gradient(160deg,var(--verde) 0%,var(--verde2) 100%);
+    color:var(--creme);padding:26px 20px 20px;padding-top:calc(26px + env(safe-area-inset-top));
+    border-bottom-left-radius:26px;border-bottom-right-radius:26px;box-shadow:0 6px 20px rgba(26,61,46,.25);
+  }
+  .marca{display:flex;align-items:center;gap:10px;font-size:13px;letter-spacing:2px;text-transform:uppercase;opacity:.75;font-weight:600}
+  .marca .pin{width:8px;height:8px;border-radius:50%;background:var(--terra-cl)}
+  h1{font-size:24px;font-weight:700;margin-top:4px;letter-spacing:-.5px}
+
+  .tela{display:none}
+  .tela.on{display:block}
+
+  .cards{padding:18px 16px 0;display:grid;gap:12px}
+  .card{background:#fff;border-radius:18px;padding:18px 20px;box-shadow:0 3px 12px rgba(40,50,35,.06);border:1px solid var(--linha)}
+  .card-total{background:linear-gradient(150deg,var(--terra) 0%,var(--terra-cl) 100%);color:#fff;border:none;box-shadow:0 6px 18px rgba(196,123,58,.35)}
+  .card .lbl{font-size:12px;text-transform:uppercase;letter-spacing:1.5px;opacity:.8;font-weight:600}
+  .card .val{font-size:34px;font-weight:800;margin-top:2px;letter-spacing:-1px}
+  .card-total .val{font-size:40px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .card.mini .val{font-size:24px}
+  .cota-nota{font-size:13px;opacity:.85;margin-top:2px}
+
+  .cotasgrid{padding:0 16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
+  .cotacard{border-radius:13px;padding:13px 13px;color:#fff;box-shadow:0 2px 8px rgba(40,50,35,.12)}
+  .cotacard .cnome{font-size:17px;font-weight:800;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cotacard .cval{font-size:19px;font-weight:800;margin-top:4px;letter-spacing:-.3px}
+
+  .secao{padding:22px 18px 8px;display:flex;align-items:center;justify-content:space-between}
+  .secao h2{font-size:16px;color:var(--verde);letter-spacing:.3px}
+  .secao .cnt{font-size:13px;color:var(--suave);background:var(--creme2);padding:3px 10px;border-radius:20px}
+
+  .lista{padding:0 16px}
+  .item{background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;border:1px solid var(--linha);box-shadow:0 2px 6px rgba(40,50,35,.04)}
+  .ico{width:42px;height:42px;border-radius:12px;flex-shrink:0;display:grid;place-items:center;font-size:20px;background:var(--creme2)}
+  .item .info{flex:1;min-width:0}
+  .item .desc{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .item .meta{font-size:12px;color:var(--suave);margin-top:2px}
+  .item .valor{font-weight:700;font-size:16px;color:var(--verde);white-space:nowrap}
+  .del{background:none;border:none;color:var(--vermelho);font-size:20px;padding:4px 6px;cursor:pointer;opacity:.55}
+  .del:active{opacity:1}
+
+  .vazio{text-align:center;color:var(--suave);padding:44px 20px;font-size:14px;line-height:1.6}
+  .vazio .big{font-size:42px;display:block;margin-bottom:8px}
+
+  .filtro{display:flex;gap:8px;padding:16px 16px 0}
+  .fbtn{flex:1;padding:11px;border:1.5px solid var(--linha);background:#fff;border-radius:14px;font-size:14px;font-weight:600;color:var(--suave);cursor:pointer;font-family:inherit}
+  .fbtn.on{background:var(--verde);color:#fff;border-color:var(--verde)}
+  .destaque{margin:16px;background:linear-gradient(150deg,var(--terra) 0%,var(--terra-cl) 100%);color:#fff;border-radius:18px;padding:18px 20px;box-shadow:0 6px 18px rgba(196,123,58,.35)}
+  .destaque .lbl{font-size:12px;text-transform:uppercase;letter-spacing:1.5px;opacity:.85;font-weight:600}
+  .destaque .nome{font-size:24px;font-weight:800;margin-top:3px}
+  .destaque .sub{font-size:14px;opacity:.9;margin-top:2px}
+  .chartbox{margin:6px 16px 0;background:#fff;border-radius:18px;padding:22px 18px;border:1px solid var(--linha);box-shadow:0 3px 12px rgba(40,50,35,.06);text-align:center}
+  .chartbox h2{font-size:15px;color:var(--verde);margin-bottom:16px;letter-spacing:.3px}
+  svg{max-width:260px;width:100%;height:auto}
+  .centro-total{font-size:12px;fill:var(--suave)}
+  .centro-valor{font-size:18px;font-weight:800;fill:var(--verde)}
+  .legenda{padding:18px 16px 0}
+  .leg{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--linha);border-radius:14px;padding:13px 16px;margin-bottom:9px;box-shadow:0 2px 6px rgba(40,50,35,.04)}
+  .dot{width:14px;height:14px;border-radius:5px;flex-shrink:0}
+  .leg .n{flex:1;font-weight:600;font-size:15px}
+  .leg .v{text-align:right}
+  .leg .v .r{font-weight:700;color:var(--verde);font-size:15px}
+  .leg .v .p{font-size:12px;color:var(--suave)}
+  .barra{height:5px;border-radius:3px;background:var(--creme2);margin-top:6px;overflow:hidden}
+  .barra i{display:block;height:100%;border-radius:3px}
+
+  /* documentos */
+  .docgrid{padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .doc{background:#fff;border:1px solid var(--linha);border-radius:16px;overflow:hidden;box-shadow:0 2px 6px rgba(40,50,35,.05);position:relative}
+  .doc img{width:100%;height:130px;object-fit:cover;display:block;cursor:pointer;background:var(--creme2)}
+  .doc .dinfo{padding:10px 12px}
+  .doc .dtit{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .doc .ddata{font-size:11px;color:var(--suave);margin-top:2px}
+  .doc .dtag{display:inline-block;font-size:10px;background:var(--creme2);color:var(--suave);padding:2px 7px;border-radius:10px;margin-top:5px}
+  .doc .dapaga{position:absolute;top:8px;right:8px;background:rgba(20,25,18,.6);color:#fff;border:none;width:28px;height:28px;border-radius:50%;font-size:15px;cursor:pointer}
+
+  .fab{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(86px + env(safe-area-inset-bottom));background:var(--verde);color:#fff;border:none;padding:15px 28px;border-radius:30px;font-size:16px;font-weight:700;box-shadow:0 8px 22px rgba(26,61,46,.4);cursor:pointer;display:flex;align-items:center;gap:8px;z-index:20}
+  .fab:active{transform:translateX(-50%) scale(.96)}
+  .nav{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--linha);display:flex;padding:8px 0 calc(8px + env(safe-area-inset-bottom));z-index:30;box-shadow:0 -4px 16px rgba(40,50,35,.06)}
+  .nav button{flex:1;background:none;border:none;padding:8px;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--suave);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+  .nav button .ni{font-size:22px}
+  .nav button.on{color:var(--verde)}
+
+  .overlay{position:fixed;inset:0;background:rgba(20,25,18,.55);display:none;align-items:flex-end;justify-content:center;z-index:50}
+  .overlay.on{display:flex}
+  .modal{background:var(--creme);width:100%;max-width:480px;border-top-left-radius:26px;border-top-right-radius:26px;padding:22px 20px calc(26px + env(safe-area-inset-bottom));animation:sobe .28s ease;max-height:92vh;overflow-y:auto}
+  @keyframes sobe{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  .modal h3{color:var(--verde);font-size:20px;margin-bottom:18px;text-align:center}
+  label{display:block;font-size:13px;font-weight:600;color:var(--suave);margin:14px 0 6px;text-transform:uppercase;letter-spacing:.5px}
+  input{width:100%;padding:14px 16px;border:1.5px solid var(--linha);border-radius:14px;font-size:16px;background:#fff;color:var(--texto);font-family:inherit}
+  input:focus{outline:none;border-color:var(--terra)}
+  .cats{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+  .cat{border:1.5px solid var(--linha);background:#fff;border-radius:20px;padding:9px 14px;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:6px}
+  .cat.sel{background:var(--verde);color:#fff;border-color:var(--verde)}
+  .btns{display:flex;gap:10px;margin-top:22px}
+  .btn{flex:1;padding:15px;border-radius:14px;border:none;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit}
+  .btn-cancel{background:var(--creme2);color:var(--suave)}
+  .btn-ok{background:var(--terra);color:#fff}
+  .btn-ok:active{background:var(--terra-cl)}
+  .fotoarea{border:2px dashed var(--linha);border-radius:16px;padding:26px;text-align:center;color:var(--suave);cursor:pointer;background:#fff}
+  .fotoarea .fi{font-size:38px;display:block;margin-bottom:6px}
+  .fotoprev{width:100%;border-radius:14px;margin-top:10px;display:none}
+  .rodape{text-align:center;font-size:12px;color:var(--suave);padding:24px 20px 8px;line-height:1.5}
+
+  /* visualizador de foto em tela cheia */
+  .viewer{position:fixed;inset:0;background:rgba(10,12,8,.92);display:none;align-items:center;justify-content:center;z-index:80;padding:20px}
+  .viewer.on{display:flex}
+  .viewer img{max-width:100%;max-height:88vh;border-radius:10px}
+  .viewer .fechar{position:absolute;top:calc(16px + env(safe-area-inset-top));right:20px;background:rgba(255,255,255,.15);color:#fff;border:none;width:44px;height:44px;border-radius:50%;font-size:22px;cursor:pointer}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="marca"><span class="pin"></span> Rancho · Contas</div>
+  <h1 id="titulo">Despesas do rancho</h1>
+</header>
+
+<!-- LANÇAMENTOS -->
+<div class="tela on" id="telaLanc">
+  <div class="cards">
+    <div class="card card-total">
+      <div class="lbl">Total gasto</div>
+      <div class="val" id="total">R$ 0,00</div>
+    </div>
+    <div class="grid2">
+      <div class="card mini">
+        <div class="lbl">Cada cota paga</div>
+        <div class="val" id="cota">R$ 0,00</div>
+        <div class="cota-nota">dividido por 5</div>
+      </div>
+      <div class="card mini">
+        <div class="lbl">Lançamentos</div>
+        <div class="val" id="qtd">0</div>
+        <div class="cota-nota">no total</div>
+      </div>
+    </div>
+  </div>
+  <div class="secao"><h2>Valor por cota</h2><span class="cnt">5 sócios</span></div>
+  <div class="cotasgrid" id="cotasGrid"></div>
+  <div class="secao"><h2>Lançamentos</h2><span class="cnt" id="cntBadge">0</span></div>
+  <div class="lista" id="lista"></div>
+</div>
+
+<!-- RESUMO -->
+<div class="tela" id="telaResumo">
+  <div class="filtro">
+    <button class="fbtn on" id="fAno" onclick="setPeriodo('ano')">Este ano</button>
+    <button class="fbtn" id="fMes" onclick="setPeriodo('mes')">Este mês</button>
+    <button class="fbtn" id="fTudo" onclick="setPeriodo('tudo')">Tudo</button>
+  </div>
+  <div id="resumoConteudo"></div>
+</div>
+
+<!-- DOCUMENTOS -->
+<div class="tela" id="telaDocs">
+  <div class="secao"><h2>Documentos fiscais</h2><span class="cnt" id="docBadge">0</span></div>
+  <div id="docsConteudo"></div>
+</div>
+
+<div class="rodape" id="rodape">
+  Dados salvos neste celular. Próximo passo: nuvem pros 5 sócios verem em tempo real.
+</div>
+
+<button class="fab" id="fab" onclick="abrir()">＋ Nova despesa</button>
+
+<div class="nav">
+  <button class="on" id="navLanc" onclick="irPara('lanc')"><span class="ni">📝</span>Lançar</button>
+  <button id="navResumo" onclick="irPara('resumo')"><span class="ni">📊</span>Resumo</button>
+  <button id="navDocs" onclick="irPara('docs')"><span class="ni">📎</span>Documentos</button>
+</div>
+
+<!-- modal despesa -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h3>Nova despesa</h3>
+    <label>Categoria</label>
+    <div class="cats" id="catsBox"></div>
+    <label>Descrição</label>
+    <input id="inDesc" placeholder="Ex: Conta de energia, tinta pra reforma...">
+    <label>Valor (R$)</label>
+    <input id="inValor" type="number" inputmode="decimal" placeholder="0,00">
+    <div class="btns">
+      <button class="btn btn-cancel" onclick="fechar()">Cancelar</button>
+      <button class="btn btn-ok" onclick="salvar()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- modal documento -->
+<div class="overlay" id="overlayDoc">
+  <div class="modal">
+    <h3>Anexar documento</h3>
+    <div class="fotoarea" id="fotoarea" onclick="document.getElementById('inFoto').click()">
+      <span class="fi">📷</span>
+      Toque pra tirar foto ou escolher da galeria
+    </div>
+    <input id="inFoto" type="file" accept="image/*" style="display:none" onchange="carregarFoto(event)">
+    <img id="fotoPrev" class="fotoprev">
+    <label>Descrição</label>
+    <input id="inDocDesc" placeholder="Ex: Nota da conta de energia">
+    <label>Categoria (opcional)</label>
+    <div class="cats" id="catsDocBox"></div>
+    <div class="btns">
+      <button class="btn btn-cancel" onclick="fecharDoc()">Cancelar</button>
+      <button class="btn btn-ok" onclick="salvarDoc()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- visualizador -->
+<div class="viewer" id="viewer" onclick="fecharViewer()">
+  <button class="fechar" onclick="fecharViewer()">✕</button>
+  <img id="viewerImg" src="">
+</div>
+
+<script>
+  const CATS = [
+    {id:'energia', nome:'Energia', ico:'⚡', cor:'#e0a52f'},
+    {id:'internet', nome:'Internet', ico:'📶', cor:'#3d7fb5'},
+    {id:'limpeza', nome:'Limpeza', ico:'🧹', cor:'#5aa86f'},
+    {id:'sal_ana', nome:'Salário Ana', ico:'👩', cor:'#b5567f'},
+    {id:'sal_marcelo', nome:'Salário Marcelo', ico:'👨', cor:'#6b5bb5'},
+    {id:'reforma', nome:'Reforma', ico:'🔨', cor:'#c47b3a'},
+    {id:'oleo', nome:'Óleo e combustível', ico:'🛢️', cor:'#8a5a3a'},
+    {id:'manutencao', nome:'Manutenção de máquinas', ico:'⚙️', cor:'#4a4a52'},
+    {id:'taxas', nome:'Taxas e impostos', ico:'🧾', cor:'#a63d2f'},
+    {id:'contabilidade', nome:'Contabilidade', ico:'📒', cor:'#2f7d7d'},
+    {id:'outros', nome:'Outros gastos', ico:'📦', cor:'#8a8f82'},
+  ];
+  const COTAS = 5;
+  const SOCIOS = [
+    {nome:'Valdeci', cor:'#2f7d4f'},
+    {nome:'Carlos', cor:'#3d7fb5'},
+    {nome:'Geraldo', cor:'#c47b3a'},
+    {nome:'Flavio', cor:'#8a5aa8'},
+    {nome:'Gustavo', cor:'#a63d2f'},
+  ];
+  let despesas = JSON.parse(localStorage.getItem('rancho_despesas') || '[]');
+  let documentos = JSON.parse(localStorage.getItem('rancho_docs') || '[]');
+  let catSel = 'energia';
+  let catDocSel = '';
+  let fotoAtual = null;
+  let periodo = 'ano';
+
+  const icoDe = id => (CATS.find(c=>c.id===id)||{}).ico || '📦';
+  const nomeDe = id => (CATS.find(c=>c.id===id)||{}).nome || 'Outros gastos';
+  const corDe = id => (CATS.find(c=>c.id===id)||{}).cor || '#8a8f82';
+  const fmt = n => 'R$ ' + n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const salvarLocal = () => localStorage.setItem('rancho_despesas', JSON.stringify(despesas));
+  const salvarDocs = () => localStorage.setItem('rancho_docs', JSON.stringify(documentos));
+
+  function irPara(t){
+    const map = {lanc:'telaLanc', resumo:'telaResumo', docs:'telaDocs'};
+    ['lanc','resumo','docs'].forEach(k=>{
+      document.getElementById(map[k]).classList.toggle('on', k===t);
+      document.getElementById('nav'+k.charAt(0).toUpperCase()+k.slice(1)).classList.toggle('on', k===t);
+    });
+    document.getElementById('fab').style.display = (t==='resumo') ? 'none' : 'flex';
+    document.getElementById('fab').textContent = (t==='docs') ? '＋ Anexar documento' : '＋ Nova despesa';
+    document.getElementById('fab').onclick = (t==='docs') ? abrirDoc : abrir;
+    document.getElementById('titulo').textContent = t==='lanc' ? 'Despesas do rancho' : t==='resumo' ? 'Onde vai o dinheiro' : 'Documentos fiscais';
+    document.getElementById('rodape').style.display = t==='lanc' ? 'block' : 'none';
+    if(t==='resumo') renderResumo();
+    if(t==='docs') renderDocs();
+    window.scrollTo(0,0);
+  }
+
+  /* despesas */
+  function renderLanc(){
+    const total = despesas.reduce((s,d)=>s+d.valor,0);
+    document.getElementById('total').textContent = fmt(total);
+    document.getElementById('cota').textContent = fmt(total/COTAS);
+    document.getElementById('qtd').textContent = despesas.length;
+    document.getElementById('cntBadge').textContent = despesas.length;
+    const porCota = total/COTAS;
+    document.getElementById('cotasGrid').innerHTML = SOCIOS.map((s,i)=>`
+      <div class="cotacard" style="background:linear-gradient(150deg,${s.cor} 0%,${s.cor}cc 100%)">
+        <div class="cnome">${s.nome}</div>
+        <div class="cval">${fmt(porCota)}</div>
+      </div>`).join('');
+    const lista = document.getElementById('lista');
+    if(despesas.length===0){ lista.innerHTML = '<div class="vazio"><span class="big">🌾</span>Nenhuma despesa ainda.<br>Toque em “Nova despesa” pra começar.</div>'; return; }
+    lista.innerHTML = despesas.map((d,i)=>`
+      <div class="item">
+        <div class="ico">${icoDe(d.cat)}</div>
+        <div class="info"><div class="desc">${d.desc||nomeDe(d.cat)}</div><div class="meta">${nomeDe(d.cat)} · ${d.data}</div></div>
+        <div class="valor">${fmt(d.valor)}</div>
+        <button class="del" onclick="apagar(${i})">✕</button>
+      </div>`).join('');
+  }
+  function montarCats(alvo, sel, fn){
+    document.getElementById(alvo).innerHTML = CATS.map(c=>
+      `<div class="cat ${c.id===sel?'sel':''}" onclick="${fn}('${c.id}')">${c.ico} ${c.nome}</div>`).join('');
+  }
+  function pickCat(id){ catSel=id; montarCats('catsBox',catSel,'pickCat'); }
+  function abrir(){ catSel='energia'; montarCats('catsBox',catSel,'pickCat'); document.getElementById('inDesc').value=''; document.getElementById('inValor').value=''; document.getElementById('overlay').classList.add('on'); }
+  function fechar(){ document.getElementById('overlay').classList.remove('on'); }
+  function salvar(){
+    const valor = parseFloat(document.getElementById('inValor').value.replace(',','.'));
+    if(!valor || valor<=0){ alert('Coloca um valor válido, chefe.'); return; }
+    const hoje = new Date();
+    despesas.unshift({cat:catSel, desc:document.getElementById('inDesc').value.trim(), valor, data:hoje.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}), mes:hoje.getMonth()});
+    salvarLocal(); renderLanc(); fechar();
+  }
+  function apagar(i){ if(confirm('Apagar essa despesa?')){ despesas.splice(i,1); salvarLocal(); renderLanc(); } }
+
+  /* resumo */
+  function setPeriodo(p){
+    periodo=p;
+    ['Ano','Mes','Tudo'].forEach(x=>document.getElementById('f'+x).classList.toggle('on', p===x.toLowerCase()));
+    renderResumo();
+  }
+  function pol(cx,cy,r,ang){ const rad=ang*Math.PI/180; return {x:cx+r*Math.cos(rad), y:cy+r*Math.sin(rad)}; }
+  function renderResumo(){
+    const mesAtual = new Date().getMonth();
+    const filtradas = despesas.filter(d=>{ if(periodo==='mes'){ const m=(d.mes!=null)?d.mes:(parseInt((d.data||'').split('/')[1])-1); return m===mesAtual; } return true; });
+    const cont = document.getElementById('resumoConteudo');
+    if(filtradas.length===0){ cont.innerHTML = '<div class="vazio"><span class="big">📊</span>Sem despesa nesse período ainda.<br>Lança na aba “Lançar” que o gráfico aparece aqui.</div>'; return; }
+    const somas={}; let total=0;
+    filtradas.forEach(d=>{ somas[d.cat]=(somas[d.cat]||0)+d.valor; total+=d.valor; });
+    const linhas = Object.keys(somas).map(cat=>({cat,nome:nomeDe(cat),cor:corDe(cat),valor:somas[cat],pct:somas[cat]/total*100})).sort((a,b)=>b.valor-a.valor);
+    const maior=linhas[0];
+    let ang=-90, paths=''; const cx=100,cy=100,r=72,rw=26;
+    linhas.forEach(l=>{
+      const frac=l.valor/total, a1=ang, a2=ang+frac*360; ang=a2;
+      if(frac>0.9999){ paths+=`<circle cx="${cx}" cy="${cy}" r="${r-rw/2}" fill="none" stroke="${l.cor}" stroke-width="${rw}"/>`; return; }
+      const large=frac>0.5?1:0;
+      const p1=pol(cx,cy,r,a1),p2=pol(cx,cy,r,a2),pi1=pol(cx,cy,r-rw,a2),pi2=pol(cx,cy,r-rw,a1);
+      paths+=`<path d="M${p1.x} ${p1.y} A${r} ${r} 0 ${large} 1 ${p2.x} ${p2.y} L${pi1.x} ${pi1.y} A${r-rw} ${r-rw} 0 ${large} 0 ${pi2.x} ${pi2.y} Z" fill="${l.cor}"/>`;
+    });
+    const legenda = linhas.map(l=>`
+      <div class="leg"><div class="dot" style="background:${l.cor}"></div>
+        <div style="flex:1"><div class="n">${l.nome}</div><div class="barra"><i style="width:${l.pct}%;background:${l.cor}"></i></div></div>
+        <div class="v"><div class="r">${fmt(l.valor)}</div><div class="p">${l.pct.toFixed(1)}%</div></div>
+      </div>`).join('');
+    cont.innerHTML = `
+      <div class="destaque"><div class="lbl">Maior gasto do período</div><div class="nome">${maior.nome}</div><div class="sub">${fmt(maior.valor)} · ${maior.pct.toFixed(1)}% de tudo</div></div>
+      <div class="chartbox"><h2>Gasto por categoria</h2>
+        <svg viewBox="0 0 200 200">${paths}<text x="100" y="94" text-anchor="middle" class="centro-total">Total</text><text x="100" y="114" text-anchor="middle" class="centro-valor">${fmt(total).replace('R$ ','R$')}</text></svg></div>
+      <div class="legenda">${legenda}</div><div style="height:20px"></div>`;
+  }
+
+  /* documentos */
+  function renderDocs(){
+    document.getElementById('docBadge').textContent = documentos.length;
+    const cont = document.getElementById('docsConteudo');
+    if(documentos.length===0){ cont.innerHTML = '<div class="vazio"><span class="big">📎</span>Nenhum documento ainda.<br>Toque em “Anexar documento” pra guardar uma nota ou comprovante.</div>'; return; }
+    cont.innerHTML = '<div class="docgrid">' + documentos.map((d,i)=>`
+      <div class="doc">
+        <button class="dapaga" onclick="apagarDoc(${i})">✕</button>
+        <img src="${d.foto}" onclick="verFoto('${i}')">
+        <div class="dinfo">
+          <div class="dtit">${d.desc||'Documento'}</div>
+          <div class="ddata">${d.data}</div>
+          ${d.cat?`<span class="dtag">${icoDe(d.cat)} ${nomeDe(d.cat)}</span>`:''}
+        </div>
+      </div>`).join('') + '</div><div style="height:20px"></div>';
+  }
+  function pickCatDoc(id){ catDocSel = (catDocSel===id)?'':id; montarCats('catsDocBox',catDocSel,'pickCatDoc'); }
+  function abrirDoc(){
+    catDocSel=''; fotoAtual=null; montarCats('catsDocBox',catDocSel,'pickCatDoc');
+    document.getElementById('inDocDesc').value='';
+    document.getElementById('fotoPrev').style.display='none';
+    document.getElementById('inFoto').value='';
+    document.getElementById('overlayDoc').classList.add('on');
+  }
+  function fecharDoc(){ document.getElementById('overlayDoc').classList.remove('on'); }
+  function carregarFoto(ev){
+    const file = ev.target.files[0]; if(!file) return;
+    const reader = new FileReader();
+    reader.onload = e=>{
+      const img = new Image();
+      img.onload = ()=>{
+        // comprime pra caber no armazenamento do celular
+        const max = 1200;
+        let {width,height} = img;
+        if(width>max || height>max){ const s = max/Math.max(width,height); width*=s; height*=s; }
+        const canvas = document.createElement('canvas');
+        canvas.width=width; canvas.height=height;
+        canvas.getContext('2d').drawImage(img,0,0,width,height);
+        fotoAtual = canvas.toDataURL('image/jpeg', 0.7);
+        const prev = document.getElementById('fotoPrev');
+        prev.src = fotoAtual; prev.style.display='block';
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+  function salvarDoc(){
+    if(!fotoAtual){ alert('Escolhe uma foto primeiro.'); return; }
+    const hoje = new Date();
+    documentos.unshift({foto:fotoAtual, desc:document.getElementById('inDocDesc').value.trim(), cat:catDocSel, data:hoje.toLocaleDateString('pt-BR')});
+    try{ salvarDocs(); }catch(e){ alert('A memória do celular encheu. Apaga alguns documentos antigos, ou vamos partir pra nuvem.'); return; }
+    renderDocs(); fecharDoc();
+  }
+  function apagarDoc(i){ if(confirm('Apagar esse documento?')){ documentos.splice(i,1); salvarDocs(); renderDocs(); } }
+  function verFoto(i){ document.getElementById('viewerImg').src = documentos[i].foto; document.getElementById('viewer').classList.add('on'); }
+  function fecharViewer(){ document.getElementById('viewer').classList.remove('on'); }
+
+  document.getElementById('overlay').addEventListener('click',e=>{ if(e.target.id==='overlay') fechar(); });
+  document.getElementById('overlayDoc').addEventListener('click',e=>{ if(e.target.id==='overlayDoc') fecharDoc(); });
+  montarCats('catsBox',catSel,'pickCat'); renderLanc();
+</script>
+</body>
+</html>
