@@ -87,6 +87,26 @@
   .barra{height:5px;border-radius:3px;background:var(--creme2);margin-top:6px;overflow:hidden}
   .barra i{display:block;height:100%;border-radius:3px}
 
+  /* raio-x */
+  .rxcards{padding:16px 16px 0;display:grid;gap:12px}
+  .rxbig{background:#fff;border:1px solid var(--linha);border-radius:18px;padding:18px 20px;box-shadow:0 3px 12px rgba(40,50,35,.06)}
+  .rxbig .lbl{font-size:12px;text-transform:uppercase;letter-spacing:1.5px;color:var(--suave);font-weight:600}
+  .rxbig .val{font-size:30px;font-weight:800;margin-top:2px;letter-spacing:-1px}
+  .rxrow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .rxsaldo{border-radius:18px;padding:18px 20px;color:#fff;box-shadow:0 6px 18px rgba(40,50,35,.18)}
+  .rxsaldo.pos{background:linear-gradient(150deg,#2f9e5f 0%,#3dbf74 100%)}
+  .rxsaldo.neg{background:linear-gradient(150deg,#a63d2f 0%,#c65a48 100%)}
+  .rxsaldo .lbl{font-size:12px;text-transform:uppercase;letter-spacing:1.5px;opacity:.85;font-weight:600}
+  .rxsaldo .val{font-size:30px;font-weight:800;margin-top:2px;letter-spacing:-1px}
+  .rxsaldo .sub{font-size:13px;opacity:.9;margin-top:3px}
+  .pixitem{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--linha);border-radius:14px;padding:13px 15px;margin-bottom:9px;box-shadow:0 2px 6px rgba(40,50,35,.04)}
+  .pixdot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+  .pixitem .pn{flex:1;font-weight:600;font-size:15px}
+  .pixitem .pv{font-weight:700;font-size:15px;color:var(--verde);margin-right:4px}
+  .pixbtn{border:none;border-radius:20px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;min-width:92px}
+  .pixbtn.pago{background:#2f9e5f;color:#fff}
+  .pixbtn.pend{background:var(--creme2);color:var(--suave)}
+
   /* documentos */
   .docgrid{padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .doc{background:#fff;border:1px solid var(--linha);border-radius:16px;overflow:hidden;box-shadow:0 2px 6px rgba(40,50,35,.05);position:relative}
@@ -181,6 +201,30 @@
   <div id="docsConteudo"></div>
 </div>
 
+<!-- RAIO-X -->
+<div class="tela" id="telaRaiox">
+  <div class="rxcards">
+    <div class="rxrow">
+      <div class="rxbig">
+        <div class="lbl">Receitas (Pix)</div>
+        <div class="val" id="rxReceita" style="color:#2f9e5f">R$ 0,00</div>
+      </div>
+      <div class="rxbig">
+        <div class="lbl">Despesas</div>
+        <div class="val" id="rxDespesa" style="color:#a63d2f">R$ 0,00</div>
+      </div>
+    </div>
+    <div class="rxsaldo pos" id="rxSaldoCard">
+      <div class="lbl">Saldo da ilha</div>
+      <div class="val" id="rxSaldo">R$ 0,00</div>
+      <div class="sub" id="rxSaldoSub">receitas menos despesas</div>
+    </div>
+  </div>
+  <div class="secao"><h2>Pix das cotas</h2><span class="cnt" id="rxPagosBadge">0/5 pagaram</span></div>
+  <div style="padding:0 16px" id="rxPixLista"></div>
+  <div style="height:20px"></div>
+</div>
+
 <div class="rodape" id="rodape">
   Dados salvos neste celular. Próximo passo: nuvem pros 5 sócios verem em tempo real.
 </div>
@@ -191,6 +235,7 @@
   <button class="on" id="navLanc" onclick="irPara('lanc')"><span class="ni">📝</span>Lançar</button>
   <button id="navResumo" onclick="irPara('resumo')"><span class="ni">📊</span>Resumo</button>
   <button id="navDocs" onclick="irPara('docs')"><span class="ni">📎</span>Documentos</button>
+  <button id="navRaiox" onclick="irPara('raiox')"><span class="ni">⚖️</span>Raio-X</button>
 </div>
 
 <!-- modal despesa -->
@@ -261,6 +306,7 @@
   ];
   let despesas = JSON.parse(localStorage.getItem('rancho_despesas') || '[]');
   let documentos = JSON.parse(localStorage.getItem('rancho_docs') || '[]');
+  let pixPagos = JSON.parse(localStorage.getItem('rancho_pix') || '[false,false,false,false,false]');
   let catSel = 'energia';
   let catDocSel = '';
   let fotoAtual = null;
@@ -274,18 +320,19 @@
   const salvarDocs = () => localStorage.setItem('rancho_docs', JSON.stringify(documentos));
 
   function irPara(t){
-    const map = {lanc:'telaLanc', resumo:'telaResumo', docs:'telaDocs'};
-    ['lanc','resumo','docs'].forEach(k=>{
+    const map = {lanc:'telaLanc', resumo:'telaResumo', docs:'telaDocs', raiox:'telaRaiox'};
+    ['lanc','resumo','docs','raiox'].forEach(k=>{
       document.getElementById(map[k]).classList.toggle('on', k===t);
       document.getElementById('nav'+k.charAt(0).toUpperCase()+k.slice(1)).classList.toggle('on', k===t);
     });
-    document.getElementById('fab').style.display = (t==='resumo') ? 'none' : 'flex';
+    document.getElementById('fab').style.display = (t==='resumo'||t==='raiox') ? 'none' : 'flex';
     document.getElementById('fab').textContent = (t==='docs') ? '＋ Anexar documento' : '＋ Nova despesa';
     document.getElementById('fab').onclick = (t==='docs') ? abrirDoc : abrir;
-    document.getElementById('titulo').textContent = t==='lanc' ? 'Despesas do rancho' : t==='resumo' ? 'Onde vai o dinheiro' : 'Documentos fiscais';
+    document.getElementById('titulo').textContent = t==='lanc' ? 'Despesas do rancho' : t==='resumo' ? 'Onde vai o dinheiro' : t==='docs' ? 'Documentos fiscais' : 'Raio-X · Receitas x Despesas';
     document.getElementById('rodape').style.display = t==='lanc' ? 'block' : 'none';
     if(t==='resumo') renderResumo();
     if(t==='docs') renderDocs();
+    if(t==='raiox') renderRaiox();
     window.scrollTo(0,0);
   }
 
@@ -420,6 +467,36 @@
   function apagarDoc(i){ if(confirm('Apagar esse documento?')){ documentos.splice(i,1); salvarDocs(); renderDocs(); } }
   function verFoto(i){ document.getElementById('viewerImg').src = documentos[i].foto; document.getElementById('viewer').classList.add('on'); }
   function fecharViewer(){ document.getElementById('viewer').classList.remove('on'); }
+
+  /* raio-x */
+  function togglePix(i){ pixPagos[i] = !pixPagos[i]; localStorage.setItem('rancho_pix', JSON.stringify(pixPagos)); renderRaiox(); }
+  function renderRaiox(){
+    const totalDespesa = despesas.reduce((s,d)=>s+d.valor,0);
+    const porCota = totalDespesa/COTAS;
+    let recebido = 0;
+    pixPagos.forEach((pago,i)=>{ if(pago) recebido += porCota; });
+    const saldo = recebido - totalDespesa;
+    const nPagos = pixPagos.filter(Boolean).length;
+
+    document.getElementById('rxReceita').textContent = fmt(recebido);
+    document.getElementById('rxDespesa').textContent = fmt(totalDespesa);
+    document.getElementById('rxPagosBadge').textContent = nPagos + '/5 pagaram';
+
+    const card = document.getElementById('rxSaldoCard');
+    card.className = 'rxsaldo ' + (saldo>=0 ? 'pos' : 'neg');
+    document.getElementById('rxSaldo').textContent = (saldo<0?'- ':'') + fmt(Math.abs(saldo));
+    document.getElementById('rxSaldoSub').textContent = saldo>=0
+      ? (nPagos<COTAS ? 'faltam '+(COTAS-nPagos)+' cota(s) pra fechar o mês' : 'todos pagaram, contas cobertas')
+      : 'ainda falta receber pra cobrir as despesas';
+
+    document.getElementById('rxPixLista').innerHTML = SOCIOS.map((s,i)=>`
+      <div class="pixitem">
+        <span class="pixdot" style="background:${pixPagos[i]?'#2f9e5f':'#d8d0bd'}"></span>
+        <span class="pn">${s.nome}</span>
+        <span class="pv">${fmt(porCota)}</span>
+        <button class="pixbtn ${pixPagos[i]?'pago':'pend'}" onclick="togglePix(${i})">${pixPagos[i]?'✓ Pago':'Pendente'}</button>
+      </div>`).join('');
+  }
 
   document.getElementById('overlay').addEventListener('click',e=>{ if(e.target.id==='overlay') fechar(); });
   document.getElementById('overlayDoc').addEventListener('click',e=>{ if(e.target.id==='overlayDoc') fecharDoc(); });
