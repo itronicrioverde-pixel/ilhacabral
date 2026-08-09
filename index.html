@@ -150,14 +150,52 @@
   .viewer.on{display:flex}
   .viewer img{max-width:100%;max-height:88vh;border-radius:10px}
   .viewer .fechar{position:absolute;top:calc(16px + env(safe-area-inset-top));right:20px;background:rgba(255,255,255,.15);color:#fff;border:none;width:44px;height:44px;border-radius:50%;font-size:22px;cursor:pointer}
+
+  /* login */
+  .loginwrap{position:fixed;inset:0;background:linear-gradient(160deg,var(--verde) 0%,var(--verde2) 100%);display:none;align-items:center;justify-content:center;z-index:100;padding:24px}
+  .loginwrap.on{display:flex}
+  .loginbox{background:var(--creme);border-radius:24px;padding:30px 24px;width:100%;max-width:380px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.3)}
+  .loginbox .lg{font-size:22px;font-weight:800;color:var(--verde);margin-bottom:4px}
+  .loginbox .lgsub{font-size:13px;color:var(--suave);margin-bottom:22px}
+  .loginbox input{margin-bottom:12px}
+  .loginbox .lgbtn{width:100%;padding:15px;border:none;border-radius:14px;background:var(--terra);color:#fff;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit}
+  .loginbox .lgerro{color:var(--vermelho);font-size:13px;min-height:18px;margin-top:8px}
+  .loginbox .lgvisit{margin-top:16px;background:none;border:none;color:var(--suave);font-size:14px;text-decoration:underline;cursor:pointer;font-family:inherit}
+
+  /* faixa de status admin/visitante */
+  .statusbar{display:flex;align-items:center;gap:8px;padding:8px 16px;font-size:12px;font-weight:600}
+  .statusbar.admin{background:#e8f3ec;color:#2f7d4f}
+  .statusbar.visitante{background:var(--creme2);color:var(--suave)}
+  .statusbar .spc{flex:1}
+  .statusbar button{background:none;border:none;color:inherit;font-weight:700;text-decoration:underline;cursor:pointer;font-size:12px;font-family:inherit}
+  .syncnote{text-align:center;font-size:11px;color:var(--suave);padding:6px}
 </style>
 </head>
 <body>
+
+<!-- LOGIN -->
+<div class="loginwrap" id="loginWrap">
+  <div class="loginbox">
+    <div class="lg">Finança Ilha</div>
+    <div class="lgsub">Entre como administrador pra lançar dados</div>
+    <input id="lgEmail" type="email" placeholder="Email" autocomplete="username">
+    <input id="lgSenha" type="password" placeholder="Senha" autocomplete="current-password">
+    <button class="lgbtn" onclick="fazerLogin()">Entrar como admin</button>
+    <div class="lgerro" id="lgErro"></div>
+    <button class="lgvisit" onclick="entrarVisitante()">Só quero ver as contas →</button>
+  </div>
+</div>
 
 <header>
   <div class="marca"><span class="pin"></span> Finança Ilha</div>
   <h1 id="titulo">Despesas do rancho</h1>
 </header>
+
+<div class="statusbar visitante" id="statusBar">
+  <span id="statusTxt">Modo visitante · só leitura</span>
+  <span class="spc"></span>
+  <button id="statusBtn" onclick="clickStatus()">Entrar como admin</button>
+</div>
 
 <!-- LANÇAMENTOS -->
 <div class="tela on" id="telaLanc">
@@ -282,7 +320,26 @@
   <img id="viewerImg" src="">
 </div>
 
-<script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
+  import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCc4yupdsU_zit2wj4dXgZrRaYaruvDk_8",
+    authDomain: "ilha-cabral.firebaseapp.com",
+    projectId: "ilha-cabral",
+    storageBucket: "ilha-cabral.firebasestorage.app",
+    messagingSenderId: "1068598796675",
+    appId: "1:1068598796675:web:eb02ecf3c4188cc145d6b6"
+  };
+  const fbApp = initializeApp(firebaseConfig);
+  const auth = getAuth(fbApp);
+  const db = getFirestore(fbApp);
+  const docRef = doc(db, "ilha", "dados");
+
+  let ehAdmin = false;
+
   const CATS = [
     {id:'energia', nome:'Energia', ico:'⚡', cor:'#e0a52f'},
     {id:'internet', nome:'Internet', ico:'📶', cor:'#3d7fb5'},
@@ -304,9 +361,9 @@
     {nome:'Flavio', cor:'#8a5aa8'},
     {nome:'Gustavo', cor:'#a63d2f'},
   ];
-  let despesas = JSON.parse(localStorage.getItem('rancho_despesas') || '[]');
-  let documentos = JSON.parse(localStorage.getItem('rancho_docs') || '[]');
-  let pixPagos = JSON.parse(localStorage.getItem('rancho_pix') || '[false,false,false,false,false]');
+  let despesas = [];
+  let documentos = [];
+  let pixPagos = [false,false,false,false,false];
   let catSel = 'energia';
   let catDocSel = '';
   let fotoAtual = null;
@@ -316,8 +373,15 @@
   const nomeDe = id => (CATS.find(c=>c.id===id)||{}).nome || 'Outros gastos';
   const corDe = id => (CATS.find(c=>c.id===id)||{}).cor || '#8a8f82';
   const fmt = n => 'R$ ' + n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-  const salvarLocal = () => localStorage.setItem('rancho_despesas', JSON.stringify(despesas));
-  const salvarDocs = () => localStorage.setItem('rancho_docs', JSON.stringify(documentos));
+  async function salvarTudo(){
+    try{
+      await setDoc(docRef, { despesas, documentos, pixPagos });
+    }catch(e){
+      alert('Não consegui salvar na nuvem. Confira sua internet. (' + (e.code||e.message) + ')');
+    }
+  }
+  const salvarLocal = () => salvarTudo();
+  const salvarDocs = () => salvarTudo();
 
   function irPara(t){
     const map = {lanc:'telaLanc', resumo:'telaResumo', docs:'telaDocs', raiox:'telaRaiox'};
@@ -461,7 +525,7 @@
     if(!fotoAtual){ alert('Escolhe uma foto primeiro.'); return; }
     const hoje = new Date();
     documentos.unshift({foto:fotoAtual, desc:document.getElementById('inDocDesc').value.trim(), cat:catDocSel, data:hoje.toLocaleDateString('pt-BR')});
-    try{ salvarDocs(); }catch(e){ alert('A memória do celular encheu. Apaga alguns documentos antigos, ou vamos partir pra nuvem.'); return; }
+    salvarDocs();
     renderDocs(); fecharDoc();
   }
   function apagarDoc(i){ if(confirm('Apagar esse documento?')){ documentos.splice(i,1); salvarDocs(); renderDocs(); } }
@@ -469,7 +533,7 @@
   function fecharViewer(){ document.getElementById('viewer').classList.remove('on'); }
 
   /* raio-x */
-  function togglePix(i){ pixPagos[i] = !pixPagos[i]; localStorage.setItem('rancho_pix', JSON.stringify(pixPagos)); renderRaiox(); }
+  function togglePix(i){ pixPagos[i] = !pixPagos[i]; salvarTudo(); renderRaiox(); }
   function renderRaiox(){
     const totalDespesa = despesas.reduce((s,d)=>s+d.valor,0);
     const porCota = totalDespesa/COTAS;
@@ -498,9 +562,77 @@
       </div>`).join('');
   }
 
+  /* ---------- LOGIN / ADMIN / TEMPO REAL ---------- */
+  const soAdmin = fn => (...args)=>{ if(!ehAdmin){ alert('Só o administrador pode alterar. Você está no modo visitante.'); return; } return fn(...args); };
+  // protege as ações de escrita
+  const _salvar=salvar, _apagar=apagar, _salvarDoc=salvarDoc, _apagarDoc=apagarDoc, _togglePix=togglePix;
+  salvar = soAdmin(_salvar);
+  apagar = soAdmin(_apagar);
+  salvarDoc = soAdmin(_salvarDoc);
+  apagarDoc = soAdmin(_apagarDoc);
+  togglePix = soAdmin(_togglePix);
+
+  function aplicarPapel(){
+    const bar = document.getElementById('statusBar');
+    const fab = document.getElementById('fab');
+    if(ehAdmin){
+      bar.className = 'statusbar admin';
+      document.getElementById('statusTxt').textContent = '● Administrador · pode lançar e editar';
+      document.getElementById('statusBtn').textContent = 'Sair';
+      fab.style.visibility = 'visible';
+    } else {
+      bar.className = 'statusbar visitante';
+      document.getElementById('statusTxt').textContent = 'Modo visitante · só leitura';
+      document.getElementById('statusBtn').textContent = 'Entrar como admin';
+      fab.style.visibility = 'hidden';
+    }
+  }
+
+  window.clickStatus = function(){
+    if(ehAdmin){ signOut(auth); }
+    else { document.getElementById('loginWrap').classList.add('on'); }
+  };
+  window.fazerLogin = function(){
+    const email = document.getElementById('lgEmail').value.trim();
+    const senha = document.getElementById('lgSenha').value;
+    document.getElementById('lgErro').textContent = '';
+    signInWithEmailAndPassword(auth, email, senha)
+      .then(()=>{ document.getElementById('loginWrap').classList.remove('on'); document.getElementById('lgSenha').value=''; })
+      .catch(e=>{ document.getElementById('lgErro').textContent = 'Email ou senha errados.'; });
+  };
+  window.entrarVisitante = function(){ document.getElementById('loginWrap').classList.remove('on'); };
+
+  onAuthStateChanged(auth, user=>{
+    ehAdmin = !!user;
+    aplicarPapel();
+  });
+
+  // escuta a nuvem em tempo real: qualquer mudança do admin aparece pra todos
+  onSnapshot(docRef, snap=>{
+    const d = snap.data() || {};
+    despesas = d.despesas || [];
+    documentos = d.documentos || [];
+    pixPagos = d.pixPagos || [false,false,false,false,false];
+    renderLanc();
+    if(document.getElementById('telaResumo').classList.contains('on')) renderResumo();
+    if(document.getElementById('telaDocs').classList.contains('on')) renderDocs();
+    if(document.getElementById('telaRaiox').classList.contains('on')) renderRaiox();
+  }, err=>{
+    console.log('erro nuvem', err);
+  });
+
+  // expõe as funções usadas no onclick do HTML
+  window.irPara=irPara; window.abrir=abrir; window.fechar=fechar; window.salvar=(...a)=>salvar(...a);
+  window.apagar=(...a)=>apagar(...a); window.pickCat=pickCat; window.setPeriodo=setPeriodo;
+  window.abrirDoc=abrirDoc; window.fecharDoc=fecharDoc; window.salvarDoc=(...a)=>salvarDoc(...a);
+  window.apagarDoc=(...a)=>apagarDoc(...a); window.pickCatDoc=pickCatDoc; window.carregarFoto=carregarFoto;
+  window.verFoto=verFoto; window.fecharViewer=fecharViewer; window.togglePix=(...a)=>togglePix(...a);
+
   document.getElementById('overlay').addEventListener('click',e=>{ if(e.target.id==='overlay') fechar(); });
   document.getElementById('overlayDoc').addEventListener('click',e=>{ if(e.target.id==='overlayDoc') fecharDoc(); });
-  montarCats('catsBox',catSel,'pickCat'); renderLanc();
+  montarCats('catsBox',catSel,'pickCat');
+  aplicarPapel();
+  renderLanc();
 </script>
 </body>
 </html>

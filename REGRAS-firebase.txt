@@ -1,0 +1,31 @@
+========================================
+REGRAS DE SEGURANÇA — Finança Ilha
+========================================
+
+Cole isto no Firebase pra que:
+- QUALQUER pessoa (os sócios) possa VER os dados
+- SÓ o admin logado possa ALTERAR
+
+--- COMECE A COPIAR DAQUI ---
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /ilha/{doc} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+  }
+}
+
+--- PARE DE COPIAR AQUI ---
+
+
+COMO COLAR (no iPhone, Safari):
+1. Abre console.firebase.google.com
+2. Menu ☰ → Segurança → Firestore (ou Firestore Database)
+3. Toca na aba "Regras" (Rules), lá em cima
+4. Apaga o que estiver escrito e cola o texto acima
+5. Toca em "Publicar" (Publish)
+
+Pronto. Agora os sócios veem tudo, mas só você (logado) altera.
