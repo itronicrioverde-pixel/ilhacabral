@@ -260,7 +260,23 @@
   </div>
   <div class="secao"><h2>Pix das cotas</h2><span class="cnt" id="rxPagosBadge">0/5 pagaram</span></div>
   <div style="padding:0 16px" id="rxPixLista"></div>
+  <div class="rxcards" style="padding-top:16px">
+    <div class="rxsaldo" id="caixaCard" style="background:linear-gradient(150deg,#245239 0%,#3d6b4f 100%)">
+      <div class="lbl">💰 Caixa da ilha (acumulado)</div>
+      <div class="val" id="caixaVal">R$ 0,00</div>
+      <div class="sub">poupança que sobrou dos meses anteriores</div>
+    </div>
+  </div>
+  <div id="fecharMesArea" style="padding:16px;display:none">
+    <button onclick="fecharMes()" style="width:100%;padding:16px;border:none;border-radius:14px;background:var(--terra);color:#fff;font-size:16px;font-weight:700;font-family:inherit;cursor:pointer">🔒 Fechar mês e guardar no histórico</button>
+    <div style="font-size:12px;color:var(--suave);text-align:center;margin-top:8px;line-height:1.5">Guarda tudo desse mês na aba Meses, joga o que sobrou pro caixa e começa o próximo do zero.</div>
+  </div>
   <div style="height:20px"></div>
+</div>
+
+<!-- MESES (histórico + comparação) -->
+<div class="tela" id="telaHist">
+  <div id="histConteudo"></div>
 </div>
 
 <div class="rodape" id="rodape">
@@ -274,6 +290,7 @@
   <button id="navResumo" onclick="irPara('resumo')"><span class="ni">📊</span>Resumo</button>
   <button id="navDocs" onclick="irPara('docs')"><span class="ni">📎</span>Documentos</button>
   <button id="navRaiox" onclick="irPara('raiox')"><span class="ni">⚖️</span>Raio-X</button>
+  <button id="navHist" onclick="irPara('hist')"><span class="ni">📅</span>Meses</button>
 </div>
 
 <!-- modal despesa -->
@@ -364,6 +381,8 @@
   let despesas = [];
   let documentos = [];
   let pixPagos = [false,false,false,false,false];
+  let historico = [];   // meses fechados
+  let caixa = 0;        // poupança acumulada da ilha
   let catSel = 'energia';
   let catDocSel = '';
   let fotoAtual = null;
@@ -375,7 +394,7 @@
   const fmt = n => 'R$ ' + n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
   async function salvarTudo(){
     try{
-      await setDoc(docRef, { despesas, documentos, pixPagos });
+      await setDoc(docRef, { despesas, documentos, pixPagos, historico, caixa });
     }catch(e){
       alert('Não consegui salvar na nuvem. Confira sua internet. (' + (e.code||e.message) + ')');
     }
@@ -384,19 +403,20 @@
   const salvarDocs = () => salvarTudo();
 
   function irPara(t){
-    const map = {lanc:'telaLanc', resumo:'telaResumo', docs:'telaDocs', raiox:'telaRaiox'};
-    ['lanc','resumo','docs','raiox'].forEach(k=>{
+    const map = {lanc:'telaLanc', resumo:'telaResumo', docs:'telaDocs', raiox:'telaRaiox', hist:'telaHist'};
+    ['lanc','resumo','docs','raiox','hist'].forEach(k=>{
       document.getElementById(map[k]).classList.toggle('on', k===t);
       document.getElementById('nav'+k.charAt(0).toUpperCase()+k.slice(1)).classList.toggle('on', k===t);
     });
-    document.getElementById('fab').style.display = (t==='resumo'||t==='raiox') ? 'none' : 'flex';
+    document.getElementById('fab').style.display = (t==='resumo'||t==='raiox'||t==='hist') ? 'none' : 'flex';
     document.getElementById('fab').textContent = (t==='docs') ? '＋ Anexar documento' : '＋ Nova despesa';
     document.getElementById('fab').onclick = (t==='docs') ? abrirDoc : abrir;
-    document.getElementById('titulo').textContent = t==='lanc' ? 'Despesas do rancho' : t==='resumo' ? 'Onde vai o dinheiro' : t==='docs' ? 'Documentos fiscais' : 'Raio-X · Receitas x Despesas';
+    document.getElementById('titulo').textContent = t==='lanc' ? 'Despesas do rancho' : t==='resumo' ? 'Onde vai o dinheiro' : t==='docs' ? 'Documentos fiscais' : t==='raiox' ? 'Raio-X · Receitas x Despesas' : 'Meses guardados';
     document.getElementById('rodape').style.display = t==='lanc' ? 'block' : 'none';
     if(t==='resumo') renderResumo();
     if(t==='docs') renderDocs();
     if(t==='raiox') renderRaiox();
+    if(t==='hist') renderHist();
     window.scrollTo(0,0);
   }
 
@@ -431,13 +451,14 @@
   function abrir(){ catSel='energia'; montarCats('catsBox',catSel,'pickCat'); document.getElementById('inDesc').value=''; document.getElementById('inValor').value=''; document.getElementById('overlay').classList.add('on'); }
   function fechar(){ document.getElementById('overlay').classList.remove('on'); }
   function salvar(){
+    if(!ehAdmin){ alert('Só o administrador pode lançar.'); return; }
     const valor = parseFloat(document.getElementById('inValor').value.replace(',','.'));
     if(!valor || valor<=0){ alert('Coloca um valor válido, chefe.'); return; }
     const hoje = new Date();
     despesas.unshift({cat:catSel, desc:document.getElementById('inDesc').value.trim(), valor, data:hoje.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}), mes:hoje.getMonth()});
     salvarLocal(); renderLanc(); fechar();
   }
-  function apagar(i){ if(confirm('Apagar essa despesa?')){ despesas.splice(i,1); salvarLocal(); renderLanc(); } }
+  function apagar(i){ if(!ehAdmin){ alert('Só o administrador pode apagar.'); return; } if(confirm('Apagar essa despesa?')){ despesas.splice(i,1); salvarLocal(); renderLanc(); } }
 
   /* resumo */
   function setPeriodo(p){
@@ -522,18 +543,19 @@
     reader.readAsDataURL(file);
   }
   function salvarDoc(){
+    if(!ehAdmin){ alert('Só o administrador pode anexar.'); return; }
     if(!fotoAtual){ alert('Escolhe uma foto primeiro.'); return; }
     const hoje = new Date();
     documentos.unshift({foto:fotoAtual, desc:document.getElementById('inDocDesc').value.trim(), cat:catDocSel, data:hoje.toLocaleDateString('pt-BR')});
     salvarDocs();
     renderDocs(); fecharDoc();
   }
-  function apagarDoc(i){ if(confirm('Apagar esse documento?')){ documentos.splice(i,1); salvarDocs(); renderDocs(); } }
+  function apagarDoc(i){ if(!ehAdmin){ alert('Só o administrador pode apagar.'); return; } if(confirm('Apagar esse documento?')){ documentos.splice(i,1); salvarDocs(); renderDocs(); } }
   function verFoto(i){ document.getElementById('viewerImg').src = documentos[i].foto; document.getElementById('viewer').classList.add('on'); }
   function fecharViewer(){ document.getElementById('viewer').classList.remove('on'); }
 
   /* raio-x */
-  function togglePix(i){ pixPagos[i] = !pixPagos[i]; salvarTudo(); renderRaiox(); }
+  function togglePix(i){ if(!ehAdmin){ alert('Só o administrador pode marcar os Pix.'); return; } pixPagos[i] = !pixPagos[i]; salvarTudo(); renderRaiox(); }
   function renderRaiox(){
     const totalDespesa = despesas.reduce((s,d)=>s+d.valor,0);
     const porCota = totalDespesa/COTAS;
@@ -560,18 +582,124 @@
         <span class="pv">${fmt(porCota)}</span>
         <button class="pixbtn ${pixPagos[i]?'pago':'pend'}" onclick="togglePix(${i})">${pixPagos[i]?'✓ Pago':'Pendente'}</button>
       </div>`).join('');
+
+    document.getElementById('caixaVal').textContent = fmt(caixa);
+    document.getElementById('fecharMesArea').style.display = ehAdmin ? 'block' : 'none';
+  }
+
+  function fecharMes(){
+    if(!ehAdmin){ alert('Só o administrador pode fechar o mês.'); return; }
+    if(despesas.length===0){ alert('Não tem nada lançado nesse mês pra fechar.'); return; }
+    const totalDespesa = despesas.reduce((s,d)=>s+d.valor,0);
+    const porCota = totalDespesa/COTAS;
+    const recebido = pixPagos.filter(Boolean).length * porCota;
+    const saldo = recebido - totalDespesa;
+    const agora = new Date();
+    const nomeMes = agora.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+    const rotulo = prompt('Fechar qual mês?', nomeMes.charAt(0).toUpperCase()+nomeMes.slice(1));
+    if(rotulo===null) return;
+    if(!confirm('Confirma fechar "'+rotulo+'"? Isso guarda tudo no histórico e começa o próximo mês do zero.')) return;
+
+    historico.unshift({
+      rotulo: rotulo,
+      fechadoEm: agora.toLocaleDateString('pt-BR'),
+      despesas: JSON.parse(JSON.stringify(despesas)),
+      pixPagos: [...pixPagos],
+      totalDespesa, recebido, saldo,
+      socios: SOCIOS.map(s=>s.nome)
+    });
+    caixa = caixa + saldo;      // o que sobrou (ou faltou) entra no caixa acumulado
+    despesas = [];
+    pixPagos = [false,false,false,false,false];
+    salvarTudo();
+    renderLanc(); renderRaiox();
+    alert('Mês "'+rotulo+'" guardado! Veja na aba Meses.');
+    irPara('hist');
+  }
+
+  /* ---------- MESES / HISTÓRICO / COMPARAÇÃO ---------- */
+  let compSel = [];  // índices dos meses selecionados pra comparar
+  function toggleComp(i){
+    const p = compSel.indexOf(i);
+    if(p>=0) compSel.splice(p,1);
+    else { if(compSel.length>=2) compSel.shift(); compSel.push(i); }
+    renderHist();
+  }
+  function apagarMes(i){
+    if(!ehAdmin){ alert('Só o administrador pode apagar um mês.'); return; }
+    if(confirm('Apagar o mês "'+historico[i].rotulo+'" do histórico? O caixa não muda.')){
+      historico.splice(i,1);
+      compSel = [];
+      salvarTudo(); renderHist();
+    }
+  }
+  function renderHist(){
+    const cont = document.getElementById('histConteudo');
+    if(historico.length===0){
+      cont.innerHTML = '<div class="vazio"><span class="big">📅</span>Nenhum mês guardado ainda.<br>No Raio-X, use “Fechar mês” quando o mês acabar.</div>';
+      return;
+    }
+    // caixa no topo
+    let html = `<div class="rxcards"><div class="rxsaldo" style="background:linear-gradient(150deg,#245239 0%,#3d6b4f 100%)">
+      <div class="lbl">💰 Caixa da ilha (acumulado)</div>
+      <div class="val">${fmt(caixa)}</div>
+      <div class="sub">${historico.length} ${historico.length===1?'mês guardado':'meses guardados'}</div>
+    </div></div>`;
+
+    html += '<div class="secao"><h2>Toque em 2 meses pra comparar</h2></div>';
+    html += '<div style="padding:0 16px">';
+    historico.forEach((m,i)=>{
+      const sel = compSel.includes(i);
+      const cor = m.saldo>=0 ? '#2f9e5f' : '#a63d2f';
+      html += `<div class="pixitem" style="border-color:${sel?'var(--terra)':'var(--linha)'};border-width:${sel?'2px':'1px'}">
+        <span class="pixdot" style="background:${sel?'var(--terra)':'#d8d0bd'}"></span>
+        <div style="flex:1" onclick="toggleComp(${i})">
+          <div class="pn">${m.rotulo}</div>
+          <div style="font-size:12px;color:var(--suave)">Gasto ${fmt(m.totalDespesa)} · sobra <span style="color:${cor};font-weight:700">${(m.saldo<0?'-':'')+fmt(Math.abs(m.saldo))}</span></div>
+        </div>
+        ${ehAdmin?`<button class="del" onclick="apagarMes(${i})">✕</button>`:''}
+      </div>`;
+    });
+    html += '</div>';
+
+    // comparação lado a lado
+    if(compSel.length===2){
+      const a = historico[compSel[0]], b = historico[compSel[1]];
+      const linha = (lbl,va,vb,ehDin=true)=>{
+        const fa = ehDin?fmt(va):va, fb = ehDin?fmt(vb):vb;
+        return `<div style="display:flex;padding:11px 14px;border-bottom:1px solid var(--linha)">
+          <div style="flex:1;font-size:14px;color:var(--suave)">${lbl}</div>
+          <div style="width:34%;text-align:right;font-weight:700;font-size:14px">${fa}</div>
+          <div style="width:34%;text-align:right;font-weight:700;font-size:14px">${fb}</div>
+        </div>`;
+      };
+      // por categoria
+      const cats = {};
+      a.despesas.forEach(d=>{ cats[d.cat]=cats[d.cat]||[0,0]; cats[d.cat][0]+=d.valor; });
+      b.despesas.forEach(d=>{ cats[d.cat]=cats[d.cat]||[0,0]; cats[d.cat][1]+=d.valor; });
+      let catRows = Object.keys(cats).sort((x,y)=>(cats[y][0]+cats[y][1])-(cats[x][0]+cats[x][1]))
+        .map(c=>linha(nomeDe(c), cats[c][0], cats[c][1])).join('');
+
+      html += `<div class="secao"><h2>Comparação</h2></div>
+        <div style="margin:0 16px;background:#fff;border:1px solid var(--linha);border-radius:16px;overflow:hidden;box-shadow:0 2px 6px rgba(40,50,35,.05)">
+          <div style="display:flex;padding:12px 14px;background:var(--creme2)">
+            <div style="flex:1"></div>
+            <div style="width:34%;text-align:right;font-weight:800;font-size:13px;color:var(--verde)">${a.rotulo}</div>
+            <div style="width:34%;text-align:right;font-weight:800;font-size:13px;color:var(--verde)">${b.rotulo}</div>
+          </div>
+          ${linha('Total de despesas', a.totalDespesa, b.totalDespesa)}
+          ${linha('Recebido (Pix)', a.recebido, b.recebido)}
+          ${linha('Sobrou no mês', a.saldo, b.saldo)}
+          <div style="padding:10px 14px;background:var(--creme2);font-size:12px;font-weight:700;color:var(--suave);text-transform:uppercase;letter-spacing:.5px">Por categoria</div>
+          ${catRows}
+        </div><div style="height:20px"></div>`;
+    } else {
+      html += `<div style="text-align:center;color:var(--suave);font-size:13px;padding:18px">Selecione ${2-compSel.length} mês(es) pra ver a comparação.</div>`;
+    }
+    cont.innerHTML = html;
   }
 
   /* ---------- LOGIN / ADMIN / TEMPO REAL ---------- */
-  const soAdmin = fn => (...args)=>{ if(!ehAdmin){ alert('Só o administrador pode alterar. Você está no modo visitante.'); return; } return fn(...args); };
-  // protege as ações de escrita
-  const _salvar=salvar, _apagar=apagar, _salvarDoc=salvarDoc, _apagarDoc=apagarDoc, _togglePix=togglePix;
-  salvar = soAdmin(_salvar);
-  apagar = soAdmin(_apagar);
-  salvarDoc = soAdmin(_salvarDoc);
-  apagarDoc = soAdmin(_apagarDoc);
-  togglePix = soAdmin(_togglePix);
-
   function aplicarPapel(){
     const bar = document.getElementById('statusBar');
     const fab = document.getElementById('fab');
@@ -586,6 +714,8 @@
       document.getElementById('statusBtn').textContent = 'Entrar como admin';
       fab.style.visibility = 'hidden';
     }
+    if(document.getElementById('telaRaiox').classList.contains('on')) renderRaiox();
+    if(document.getElementById('telaHist').classList.contains('on')) renderHist();
   }
 
   window.clickStatus = function(){
@@ -613,20 +743,24 @@
     despesas = d.despesas || [];
     documentos = d.documentos || [];
     pixPagos = d.pixPagos || [false,false,false,false,false];
+    historico = d.historico || [];
+    caixa = d.caixa || 0;
     renderLanc();
     if(document.getElementById('telaResumo').classList.contains('on')) renderResumo();
     if(document.getElementById('telaDocs').classList.contains('on')) renderDocs();
     if(document.getElementById('telaRaiox').classList.contains('on')) renderRaiox();
+    if(document.getElementById('telaHist').classList.contains('on')) renderHist();
   }, err=>{
     console.log('erro nuvem', err);
   });
 
   // expõe as funções usadas no onclick do HTML
-  window.irPara=irPara; window.abrir=abrir; window.fechar=fechar; window.salvar=(...a)=>salvar(...a);
-  window.apagar=(...a)=>apagar(...a); window.pickCat=pickCat; window.setPeriodo=setPeriodo;
-  window.abrirDoc=abrirDoc; window.fecharDoc=fecharDoc; window.salvarDoc=(...a)=>salvarDoc(...a);
-  window.apagarDoc=(...a)=>apagarDoc(...a); window.pickCatDoc=pickCatDoc; window.carregarFoto=carregarFoto;
-  window.verFoto=verFoto; window.fecharViewer=fecharViewer; window.togglePix=(...a)=>togglePix(...a);
+  window.irPara=irPara; window.abrir=abrir; window.fechar=fechar; window.salvar=salvar;
+  window.apagar=apagar; window.pickCat=pickCat; window.setPeriodo=setPeriodo;
+  window.abrirDoc=abrirDoc; window.fecharDoc=fecharDoc; window.salvarDoc=salvarDoc;
+  window.apagarDoc=apagarDoc; window.pickCatDoc=pickCatDoc; window.carregarFoto=carregarFoto;
+  window.verFoto=verFoto; window.fecharViewer=fecharViewer; window.togglePix=togglePix;
+  window.fecharMes=fecharMes; window.toggleComp=toggleComp; window.apagarMes=apagarMes; window.renderHist=renderHist;
 
   document.getElementById('overlay').addEventListener('click',e=>{ if(e.target.id==='overlay') fechar(); });
   document.getElementById('overlayDoc').addEventListener('click',e=>{ if(e.target.id==='overlayDoc') fecharDoc(); });
