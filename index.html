@@ -3,8 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#1a3d2e">
+<meta name="theme-color" content="#0A4A57">
 <title>Finança Ilha</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="financa-ilha-icone.png">
 <link rel="apple-touch-icon" href="financa-ilha-icone.png">
@@ -13,162 +16,212 @@
 <meta name="apple-mobile-web-app-title" content="Finança Ilha">
 <style>
   :root{
-    --verde:#1a3d2e; --verde2:#245239;
-    --terra:#c47b3a; --terra-cl:#e09b52;
-    --creme:#f5f1e6; --creme2:#ece5d3;
-    --texto:#22281f; --suave:#6b7566; --linha:#d8d0bd;
-    --vermelho:#a63d2f;
+    --mar:#0A4A57; --mar-claro:#DCEEF3; --acao:#B04028;
+    --fundo:#F4F1EA; --texto:#0B2530; --suave:#36525C;
+    --linha:#E6E1D6; --borda:#CFC8B8; --verde:#1E7A4C; --vermelho:#A63D2F;
+    /* nomes antigos, mantidos por compatibilidade */
+    --terra:var(--acao); --creme:var(--fundo); --creme2:var(--linha);
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--creme);color:var(--texto);padding-bottom:96px}
-  header{
-    background:linear-gradient(160deg,var(--verde) 0%,var(--verde2) 100%);
-    color:var(--creme);padding:26px 20px 20px;padding-top:calc(26px + env(safe-area-inset-top));
-    border-bottom-left-radius:26px;border-bottom-right-radius:26px;box-shadow:0 6px 20px rgba(26,61,46,.25);
-  }
-  .marca{display:flex;align-items:center;gap:10px;font-size:13px;letter-spacing:2px;text-transform:uppercase;opacity:.75;font-weight:600}
-  .marca .pin{width:8px;height:8px;border-radius:50%;background:var(--terra-cl)}
-  h1{font-size:24px;font-weight:700;margin-top:4px;letter-spacing:-.5px}
+  body{font-family:'Manrope','Segoe UI',system-ui,-apple-system,sans-serif;background:var(--fundo);color:var(--texto);font-size:17px;line-height:1.35;padding-bottom:calc(190px + env(safe-area-inset-bottom))}
+  button,input{font-family:inherit}
+  button{cursor:pointer}
+  :focus-visible{outline:3px solid #F2B705;outline-offset:2px}
 
-  .tela{display:none}
+  /* ---------- topo ---------- */
+  header{background:var(--mar);color:#fff;padding:calc(22px + env(safe-area-inset-top)) 22px 56px;position:relative}
+  .marca{font-size:17px;font-weight:700;opacity:.9}
+  h1{font-size:28px;font-weight:800;letter-spacing:-.5px;line-height:1.15;margin-top:2px}
+  .onda{position:absolute;left:0;bottom:-1px;width:100%;height:40px;display:block}
+  .statusbar{margin-top:14px;display:flex;align-items:center;gap:10px;font-size:15px;font-weight:700}
+  .statusbar .spc{display:none}
+  #statusTxt{flex:1}
+  .statusbar.admin #statusTxt::before{content:'';display:inline-block;width:10px;height:10px;border-radius:50%;background:#7EE0A8;margin-right:8px;vertical-align:1px}
+  .statusbar button{min-height:48px;padding:0 18px;border-radius:24px;font-size:15px;font-weight:800;white-space:nowrap}
+  .statusbar.visitante button{background:#fff;color:var(--mar);border:none}
+  .statusbar.admin button{background:transparent;color:#fff;border:2px solid rgba(255,255,255,.6)}
+
+  .aviso{padding:12px 18px;font-size:16px;font-weight:700;text-align:center;line-height:1.4;padding-top:calc(12px + env(safe-area-inset-top))}
+  .aviso.carregando{background:#FFF1D6;color:#7A4E0F}
+  .aviso.erro{background:#FBE9E7;color:var(--vermelho)}
+  .aviso.ok{display:none}
+  .aviso:not(.ok) + header{padding-top:22px}
+
+  .tela{display:none;max-width:560px;margin:0 auto}
   .tela.on{display:block}
 
-  .cards{padding:18px 16px 0;display:grid;gap:12px}
-  .card{background:#fff;border-radius:18px;padding:18px 20px;box-shadow:0 3px 12px rgba(40,50,35,.06);border:1px solid var(--linha)}
-  .card-total{background:linear-gradient(150deg,var(--terra) 0%,var(--terra-cl) 100%);color:#fff;border:none;box-shadow:0 6px 18px rgba(196,123,58,.35)}
-  .card .lbl{font-size:12px;text-transform:uppercase;letter-spacing:1.5px;opacity:.8;font-weight:600}
-  .card .val{font-size:34px;font-weight:800;margin-top:2px;letter-spacing:-1px}
-  .card-total .val{font-size:40px}
-  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  .card.mini .val{font-size:24px}
-  .cota-nota{font-size:13px;opacity:.85;margin-top:2px}
+  /* ---------- cartão principal (Lançar / Meses) ---------- */
+  .cards{margin:-26px 18px 0;position:relative}
+  .card-total{background:#fff;border-radius:26px;padding:22px;box-shadow:0 10px 28px rgba(11,37,48,.12)}
+  .card-total .lbl{font-size:18px;font-weight:700;color:var(--suave)}
+  .card-total .val{font-size:44px;font-weight:800;letter-spacing:-1.5px;line-height:1.1;margin-top:2px}
+  .card-total .val.caixa-val{font-size:36px;color:var(--mar)}
+  .divisor{height:2px;background:#EEEAE0;margin:16px 0 4px}
+  .linha-info{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:12px}
+  .li-t{font-size:18px;font-weight:700;color:var(--suave)}
+  .li-s{font-size:15px;font-weight:600;color:var(--suave)}
+  .li-v{font-size:26px;font-weight:800;white-space:nowrap}
+  .li-v.acao{color:var(--acao)}
 
-  .cotasgrid{padding:0 16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
-  .cotacard{border-radius:13px;padding:13px 13px;color:#fff;box-shadow:0 2px 8px rgba(40,50,35,.12)}
-  .cotacard .cnome{font-size:17px;font-weight:800;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .cotacard .cval{font-size:19px;font-weight:800;margin-top:4px;letter-spacing:-.3px}
+  .secao{padding:26px 22px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .secao h2{font-size:22px;font-weight:800;line-height:1.2}
+  .cnt{font-size:15px;font-weight:800;background:var(--linha);padding:6px 12px;border-radius:999px;white-space:nowrap}
 
-  .secao{padding:22px 18px 8px;display:flex;align-items:center;justify-content:space-between}
-  .secao h2{font-size:16px;color:var(--verde);letter-spacing:.3px}
-  .secao .cnt{font-size:13px;color:var(--suave);background:var(--creme2);padding:3px 10px;border-radius:20px}
+  .av{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font-size:20px;font-weight:800;flex:0 0 auto;color:var(--texto)}
+  .cotasgrid{padding:0 18px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .cotacard{background:#fff;border-radius:20px;padding:14px;display:flex;align-items:center;gap:12px;min-width:0}
+  .cnome{font-size:18px;font-weight:800;overflow:hidden;text-overflow:ellipsis}
+  .cval{font-size:17px;font-weight:700;color:var(--acao);white-space:nowrap}
 
-  .lista{padding:0 16px}
-  .item{background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;border:1px solid var(--linha);box-shadow:0 2px 6px rgba(40,50,35,.04)}
-  .ico{width:42px;height:42px;border-radius:12px;flex-shrink:0;display:grid;place-items:center;font-size:20px;background:var(--creme2)}
-  .item .info{flex:1;min-width:0}
-  .item .desc{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .item .meta{font-size:12px;color:var(--suave);margin-top:2px}
-  .item .valor{font-weight:700;font-size:16px;color:var(--verde);white-space:nowrap}
-  .del{background:none;border:none;color:var(--vermelho);font-size:20px;padding:4px 6px;cursor:pointer;opacity:.55}
-  .del:active{opacity:1}
+  .lista{padding:0 18px;display:flex;flex-direction:column;gap:10px}
+  .item{background:#fff;border-radius:20px;padding:12px;display:flex;align-items:center;gap:12px}
+  .ico{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;flex:0 0 auto}
+  .ico svg{width:28px;height:28px}
+  .info{flex:1;min-width:0}
+  .desc{font-size:19px;font-weight:800;overflow-wrap:anywhere}
+  .meta{font-size:15px;font-weight:600;color:var(--suave)}
+  .valor{font-size:19px;font-weight:800;margin-top:2px}
+  .del{width:48px;height:48px;border-radius:50%;border:none;background:#F8E3DD;color:var(--acao);display:grid;place-items:center;flex:0 0 auto}
+  .del svg{width:22px;height:22px}
 
-  .vazio{text-align:center;color:var(--suave);padding:44px 20px;font-size:14px;line-height:1.6}
-  .vazio .big{font-size:42px;display:block;margin-bottom:8px}
+  .vazio{text-align:center;color:var(--suave);padding:40px 24px;font-size:17px;font-weight:600;line-height:1.5}
+  .rodape{text-align:center;font-size:15px;font-weight:600;color:var(--suave);padding:18px 30px}
 
-  .filtro{display:flex;gap:8px;padding:16px 16px 0}
-  .fbtn{flex:1;padding:11px;border:1.5px solid var(--linha);background:#fff;border-radius:14px;font-size:14px;font-weight:600;color:var(--suave);cursor:pointer;font-family:inherit}
-  .fbtn.on{background:var(--verde);color:#fff;border-color:var(--verde)}
-  .destaque{margin:16px;background:linear-gradient(150deg,var(--terra) 0%,var(--terra-cl) 100%);color:#fff;border-radius:18px;padding:18px 20px;box-shadow:0 6px 18px rgba(196,123,58,.35)}
-  .destaque .lbl{font-size:12px;text-transform:uppercase;letter-spacing:1.5px;opacity:.85;font-weight:600}
-  .destaque .nome{font-size:24px;font-weight:800;margin-top:3px}
-  .destaque .sub{font-size:14px;opacity:.9;margin-top:2px}
-  .chartbox{margin:6px 16px 0;background:#fff;border-radius:18px;padding:22px 18px;border:1px solid var(--linha);box-shadow:0 3px 12px rgba(40,50,35,.06);text-align:center}
-  .chartbox h2{font-size:15px;color:var(--verde);margin-bottom:16px;letter-spacing:.3px}
-  svg{max-width:260px;width:100%;height:auto}
-  .centro-total{font-size:12px;fill:var(--suave)}
-  .centro-valor{font-size:18px;font-weight:800;fill:var(--verde)}
-  .legenda{padding:18px 16px 0}
-  .leg{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--linha);border-radius:14px;padding:13px 16px;margin-bottom:9px;box-shadow:0 2px 6px rgba(40,50,35,.04)}
-  .dot{width:14px;height:14px;border-radius:5px;flex-shrink:0}
-  .leg .n{flex:1;font-weight:600;font-size:15px}
+  /* ---------- Resumo ---------- */
+  .filtro{margin:-18px 18px 0;position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .fbtn{min-height:54px;border:2px solid var(--borda);border-radius:16px;background:#fff;color:var(--texto);font-size:16px;font-weight:700}
+  .fbtn.on{background:var(--mar);border-color:var(--mar);color:#fff;font-weight:800;box-shadow:0 6px 16px rgba(11,37,48,.18)}
+  .destaque{margin:18px 18px 0;background:var(--acao);color:#fff;border-radius:24px;padding:20px 22px}
+  .destaque .lbl{font-size:17px;font-weight:700;opacity:.92}
+  .destaque .nome{font-size:30px;font-weight:800;letter-spacing:-.5px;line-height:1.15}
+  .destaque .sub{font-size:18px;font-weight:700;margin-top:2px}
+  .chartbox{margin:18px 18px 0;background:#fff;border-radius:24px;padding:22px;text-align:center}
+  .chartbox h2{font-size:20px;font-weight:800;text-align:left;margin-bottom:14px}
+  .chartbox svg{width:100%;max-width:240px;height:auto}
+  .centro-total{font-size:13px;font-weight:700;fill:var(--suave)}
+  .centro-valor{font-size:17px;font-weight:800;fill:var(--texto)}
+  .legenda{padding:18px 18px 0;display:flex;flex-direction:column;gap:10px}
+  .leg{background:#fff;border-radius:20px;padding:16px;display:flex;align-items:center;gap:14px}
+  .dot{width:18px;height:18px;border-radius:6px;flex:0 0 auto}
+  .leg .n{font-size:19px;font-weight:800}
+  .barra{height:10px;border-radius:5px;background:var(--linha);overflow:hidden;margin-top:8px}
+  .barra i{display:block;height:100%;border-radius:5px}
   .leg .v{text-align:right}
-  .leg .v .r{font-weight:700;color:var(--verde);font-size:15px}
-  .leg .v .p{font-size:12px;color:var(--suave)}
-  .barra{height:5px;border-radius:3px;background:var(--creme2);margin-top:6px;overflow:hidden}
-  .barra i{display:block;height:100%;border-radius:3px}
+  .leg .r{font-size:19px;font-weight:800;white-space:nowrap}
+  .leg .p{font-size:16px;font-weight:700;color:var(--suave)}
 
-  /* raio-x */
-  .rxcards{padding:16px 16px 0;display:grid;gap:12px}
-  .rxbig{background:#fff;border:1px solid var(--linha);border-radius:18px;padding:18px 20px;box-shadow:0 3px 12px rgba(40,50,35,.06)}
-  .rxbig .lbl{font-size:12px;text-transform:uppercase;letter-spacing:1.5px;color:var(--suave);font-weight:600}
-  .rxbig .val{font-size:30px;font-weight:800;margin-top:2px;letter-spacing:-1px}
-  .rxrow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  .rxsaldo{border-radius:18px;padding:18px 20px;color:#fff;box-shadow:0 6px 18px rgba(40,50,35,.18)}
-  .rxsaldo.pos{background:linear-gradient(150deg,#2f9e5f 0%,#3dbf74 100%)}
-  .rxsaldo.neg{background:linear-gradient(150deg,#a63d2f 0%,#c65a48 100%)}
-  .rxsaldo .lbl{font-size:12px;text-transform:uppercase;letter-spacing:1.5px;opacity:.85;font-weight:600}
-  .rxsaldo .val{font-size:30px;font-weight:800;margin-top:2px;letter-spacing:-1px}
-  .rxsaldo .sub{font-size:13px;opacity:.9;margin-top:3px}
-  .pixitem{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--linha);border-radius:14px;padding:13px 15px;margin-bottom:9px;box-shadow:0 2px 6px rgba(40,50,35,.04)}
-  .pixdot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
-  .pixitem .pn{flex:1;font-weight:600;font-size:15px}
-  .pixitem .pv{font-weight:700;font-size:15px;color:var(--verde);margin-right:4px}
-  .pixbtn{border:none;border-radius:20px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;min-width:92px}
-  .pixbtn.pago{background:#2f9e5f;color:#fff}
-  .pixbtn.pend{background:var(--creme2);color:var(--suave)}
+  /* ---------- Documentos ---------- */
+  #telaDocs > .secao:first-child{padding-top:8px}
+  .docgrid{padding:0 18px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .doc{background:#fff;border-radius:20px;overflow:hidden;position:relative}
+  .doc img{width:100%;height:150px;object-fit:cover;display:block;background:#E9E4D8;cursor:pointer}
+  .dinfo{padding:12px}
+  .dtit{font-size:17px;font-weight:800;overflow-wrap:anywhere}
+  .ddata{font-size:15px;font-weight:600;color:var(--suave);margin-top:2px}
+  .dtag{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:700;background:var(--linha);padding:4px 10px;border-radius:999px;margin-top:6px}
+  .dtag svg{width:15px;height:15px}
+  .dapaga{position:absolute;top:8px;right:8px;width:44px;height:44px;border-radius:50%;border:none;background:#fff;color:var(--acao);display:grid;place-items:center;box-shadow:0 2px 8px rgba(0,0,0,.12);z-index:1}
+  .dapaga svg{width:20px;height:20px}
 
-  /* documentos */
-  .docgrid{padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  .doc{background:#fff;border:1px solid var(--linha);border-radius:16px;overflow:hidden;box-shadow:0 2px 6px rgba(40,50,35,.05);position:relative}
-  .doc img{width:100%;height:130px;object-fit:cover;display:block;cursor:pointer;background:var(--creme2)}
-  .doc .dinfo{padding:10px 12px}
-  .doc .dtit{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .doc .ddata{font-size:11px;color:var(--suave);margin-top:2px}
-  .doc .dtag{display:inline-block;font-size:10px;background:var(--creme2);color:var(--suave);padding:2px 7px;border-radius:10px;margin-top:5px}
-  .doc .dapaga{position:absolute;top:8px;right:8px;background:rgba(20,25,18,.6);color:#fff;border:none;width:28px;height:28px;border-radius:50%;font-size:15px;cursor:pointer}
+  /* ---------- Raio-X ---------- */
+  .rxcards{margin:0 18px;display:flex;flex-direction:column;gap:12px}
+  #telaRaiox > .rxcards:first-child{margin-top:-26px;position:relative}
+  .rxrow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .rxbig{background:#fff;border-radius:22px;padding:16px;box-shadow:0 8px 22px rgba(11,37,48,.10)}
+  .rxbig .lbl{font-size:16px;font-weight:700;color:var(--suave)}
+  .rxbig .val{font-size:24px;font-weight:800;white-space:nowrap}
+  .val.verde{color:var(--verde)} .val.vermelho{color:var(--acao)}
+  .rxsaldo{border-radius:22px;padding:18px 20px;color:#fff}
+  .rxsaldo.pos{background:var(--verde)}
+  .rxsaldo.neg{background:var(--vermelho)}
+  .rxsaldo.caixa{background:var(--mar)}
+  .rxsaldo .lbl{font-size:17px;font-weight:700;opacity:.92}
+  .rxsaldo .val{font-size:34px;font-weight:800;letter-spacing:-1px}
+  .rxsaldo .sub{font-size:17px;font-weight:700}
+  .pixbarra{margin:0 18px 12px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+  .pixbarra i{height:12px;border-radius:6px;background:#E0DACD}
+  .pixbarra i.ok{background:var(--verde)}
+  #rxPixLista{padding:0 18px;display:flex;flex-direction:column;gap:9px}
+  .pixitem{background:#fff;border-radius:20px;min-height:72px;padding:10px 10px 10px 12px;display:flex;align-items:center;gap:12px}
+  .pn{font-size:20px;font-weight:800}
+  .pv{font-size:16px;font-weight:600;color:var(--suave)}
+  .pixbtn{min-width:128px;min-height:52px;padding:0 14px;border-radius:26px;font-size:17px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;gap:6px;flex:0 0 auto}
+  .pixbtn.pago{background:var(--verde);color:#fff;border:2.5px solid var(--verde)}
+  .pixbtn.pend{background:#fff;color:var(--acao);border:2.5px solid var(--acao)}
+  .pixbtn svg{width:20px;height:20px}
+  .btn-grande{width:100%;min-height:66px;padding:8px 16px;border:none;border-radius:20px;background:var(--acao);color:#fff;font-size:19px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 8px 20px rgba(176,64,40,.30)}
+  .btn-grande svg{width:24px;height:24px;flex:0 0 auto}
+  .ajuda{font-size:15px;font-weight:600;color:var(--suave);text-align:center;margin-top:10px;line-height:1.45}
 
-  .fab{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(86px + env(safe-area-inset-bottom));background:var(--verde);color:#fff;border:none;padding:15px 28px;border-radius:30px;font-size:16px;font-weight:700;box-shadow:0 8px 22px rgba(26,61,46,.4);cursor:pointer;display:flex;align-items:center;gap:8px;z-index:20}
-  .fab:active{transform:translateX(-50%) scale(.96)}
-  .nav{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--linha);display:flex;padding:8px 0 calc(8px + env(safe-area-inset-bottom));z-index:30;box-shadow:0 -4px 16px rgba(40,50,35,.06)}
-  .nav button{flex:1;background:none;border:none;padding:8px;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--suave);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
-  .nav button .ni{font-size:22px}
-  .nav button.on{color:var(--verde)}
+  /* ---------- Meses ---------- */
+  .meslista{padding:0 18px;display:flex;flex-direction:column;gap:10px}
+  .mesrow{display:flex;gap:8px;align-items:center}
+  .mesitem{flex:1;min-width:0;text-align:left;background:#fff;border:3px solid transparent;border-radius:20px;padding:14px 16px;display:flex;align-items:center;gap:14px;color:var(--texto)}
+  .mesitem.sel{border-color:var(--acao)}
+  .chk{width:32px;height:32px;border-radius:50%;border:2.5px solid var(--borda);display:grid;place-items:center;flex:0 0 auto;color:#fff}
+  .mesitem.sel .chk{background:var(--acao);border-color:var(--acao)}
+  .chk svg{width:18px;height:18px}
+  .mt{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .mn{font-size:20px;font-weight:800}
+  .ms{font-size:16px;font-weight:600;color:var(--suave)}
+  .ms b{white-space:nowrap}
+  .comp{margin:0 18px;background:#fff;border-radius:22px;overflow:hidden}
+  .comp .cl{display:flex;align-items:center;gap:6px;padding:14px 16px;border-bottom:2px solid #F0ECE3;font-size:17px}
+  .comp .cl .k{flex:1;font-weight:700;color:var(--suave)}
+  .comp .cl .c{width:30%;text-align:right;font-weight:800}
+  .comp .cl.cab{background:var(--linha);font-size:16px}
+  .comp .cl.sobra .c{color:var(--verde)}
+  .comp .cl.cat .k{color:var(--texto)}
+  .comp .sub{padding:12px 16px;background:#F0ECE3;font-size:16px;font-weight:800;color:var(--suave)}
 
-  .overlay{position:fixed;inset:0;background:rgba(20,25,18,.55);display:none;align-items:flex-end;justify-content:center;z-index:50}
+  /* ---------- botão de ação e menu ---------- */
+  .fab{position:fixed;left:16px;right:16px;bottom:calc(96px + env(safe-area-inset-bottom));max-width:560px;margin:0 auto;min-height:64px;border:none;border-radius:20px;background:var(--acao);color:#fff;font-size:21px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 8px 20px rgba(176,64,40,.30);z-index:20}
+  .fab svg{width:26px;height:26px}
+  .nav{position:fixed;left:0;right:0;bottom:0;background:#fff;box-shadow:0 -4px 18px rgba(11,37,48,.08);display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;padding:6px 4px calc(6px + env(safe-area-inset-bottom));z-index:30}
+  .nav button{min-height:72px;border:none;border-radius:16px;background:transparent;color:var(--suave);font-size:clamp(11.5px,3.3vw,13px);letter-spacing:-.2px;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:0}
+  .nav button svg{width:28px;height:28px}
+  .nav button.on{background:var(--mar-claro);color:var(--mar);font-weight:800}
+
+  /* ---------- janelas (Nova despesa / Anexar documento) ---------- */
+  .overlay{position:fixed;inset:0;background:rgba(11,37,48,.6);display:none;align-items:flex-end;justify-content:center;z-index:50}
   .overlay.on{display:flex}
-  .modal{background:var(--creme);width:100%;max-width:480px;border-top-left-radius:26px;border-top-right-radius:26px;padding:22px 20px calc(26px + env(safe-area-inset-bottom));animation:sobe .28s ease;max-height:92vh;overflow-y:auto}
-  @keyframes sobe{from{transform:translateY(100%)}to{transform:translateY(0)}}
-  .modal h3{color:var(--verde);font-size:20px;margin-bottom:18px;text-align:center}
-  label{display:block;font-size:13px;font-weight:600;color:var(--suave);margin:14px 0 6px;text-transform:uppercase;letter-spacing:.5px}
-  input{width:100%;padding:14px 16px;border:1.5px solid var(--linha);border-radius:14px;font-size:16px;background:#fff;color:var(--texto);font-family:inherit}
-  input:focus{outline:none;border-color:var(--terra)}
-  .cats{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
-  .cat{border:1.5px solid var(--linha);background:#fff;border-radius:20px;padding:9px 14px;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:6px}
-  .cat.sel{background:var(--verde);color:#fff;border-color:var(--verde)}
+  .modal{background:var(--fundo);width:100%;max-width:560px;border-radius:30px 30px 0 0;padding:14px 20px calc(24px + env(safe-area-inset-bottom));max-height:94vh;overflow-y:auto;animation:sobe .25s ease}
+  .modal::before{content:'';display:block;width:48px;height:6px;border-radius:3px;background:var(--borda);margin:0 auto 10px}
+  @keyframes sobe{from{transform:translateY(100%)}to{transform:none}}
+  @media (prefers-reduced-motion:reduce){.modal{animation:none}}
+  .modal h3{font-size:26px;font-weight:800;color:var(--mar);text-align:center;margin-bottom:4px}
+  .modal label{display:block;font-size:18px;font-weight:800;margin:16px 0 8px}
+  input{width:100%;min-height:60px;padding:0 16px;border:2.5px solid var(--borda);border-radius:16px;background:#fff;font-size:18px;font-weight:600;color:var(--texto)}
+  input:focus{outline:none;border-color:var(--mar)}
+  #inValor{font-size:26px;font-weight:800;border-color:var(--mar)}
+  .cats{display:flex;flex-wrap:wrap;gap:8px}
+  .cat{min-height:50px;padding:0 14px;border-radius:25px;border:2.5px solid var(--borda);background:#fff;color:var(--texto);font-size:16px;font-weight:800;display:inline-flex;align-items:center;gap:8px}
+  .cat i{width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.1);flex:0 0 auto}
+  .cat.sel{background:var(--mar);border-color:var(--mar);color:#fff}
   .btns{display:flex;gap:10px;margin-top:22px}
-  .btn{flex:1;padding:15px;border-radius:14px;border:none;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit}
-  .btn-cancel{background:var(--creme2);color:var(--suave)}
-  .btn-ok{background:var(--terra);color:#fff}
-  .btn-ok:active{background:var(--terra-cl)}
-  .fotoarea{border:2px dashed var(--linha);border-radius:16px;padding:26px;text-align:center;color:var(--suave);cursor:pointer;background:#fff}
-  .fotoarea .fi{font-size:38px;display:block;margin-bottom:6px}
-  .fotoprev{width:100%;border-radius:14px;margin-top:10px;display:none}
-  .rodape{text-align:center;font-size:12px;color:var(--suave);padding:24px 20px 8px;line-height:1.5}
+  .btn{flex:1;min-height:62px;border-radius:18px;font-size:19px;font-weight:800}
+  .btn-cancel{background:#fff;border:2.5px solid var(--borda);color:var(--suave)}
+  .btn-ok{flex:1.4;background:var(--acao);border:none;color:#fff;box-shadow:0 8px 20px rgba(176,64,40,.30)}
+  .fotoarea{border:2.5px dashed var(--borda);border-radius:18px;padding:24px;text-align:center;color:var(--suave);font-size:17px;font-weight:700;background:#fff;cursor:pointer;margin-top:8px}
+  .fotoarea .fi{display:block;margin:0 auto 6px;width:40px;height:40px;color:var(--mar)}
+  .fotoprev{width:100%;border-radius:16px;margin-top:10px;display:none}
 
-  /* visualizador de foto em tela cheia */
+  /* ---------- login ---------- */
+  .loginwrap{position:fixed;inset:0;background:var(--mar);display:none;align-items:center;justify-content:center;z-index:100;padding:20px;overflow-y:auto}
+  .loginwrap.on{display:flex}
+  .loginbox{background:var(--fundo);border-radius:28px;padding:30px 22px 22px;width:100%;max-width:420px;box-shadow:0 16px 40px rgba(0,0,0,.25);display:flex;flex-direction:column;gap:10px}
+  .loginbox .lg{font-size:30px;font-weight:800;text-align:center;color:var(--mar)}
+  .loginbox .lgsub{font-size:18px;font-weight:600;text-align:center;color:var(--suave);margin-bottom:8px}
+  .loginbox label{font-size:17px;font-weight:800}
+  .lgbtn{min-height:64px;margin-top:8px;border:none;border-radius:18px;background:var(--acao);color:#fff;font-size:20px;font-weight:800;box-shadow:0 8px 20px rgba(176,64,40,.30)}
+  .lgerro{min-height:22px;text-align:center;font-size:16px;font-weight:700;color:var(--vermelho)}
+  .lgvisit{min-height:56px;border:2.5px solid var(--mar);border-radius:18px;background:transparent;color:var(--mar);font-size:18px;font-weight:800}
+
+  /* ---------- foto em tela cheia ---------- */
   .viewer{position:fixed;inset:0;background:rgba(10,12,8,.92);display:none;align-items:center;justify-content:center;z-index:80;padding:20px}
   .viewer.on{display:flex}
   .viewer img{max-width:100%;max-height:88vh;border-radius:10px}
-  .viewer .fechar{position:absolute;top:calc(16px + env(safe-area-inset-top));right:20px;background:rgba(255,255,255,.15);color:#fff;border:none;width:44px;height:44px;border-radius:50%;font-size:22px;cursor:pointer}
-
-  /* login */
-  .loginwrap{position:fixed;inset:0;background:linear-gradient(160deg,var(--verde) 0%,var(--verde2) 100%);display:none;align-items:center;justify-content:center;z-index:100;padding:24px}
-  .loginwrap.on{display:flex}
-  .loginbox{background:var(--creme);border-radius:24px;padding:30px 24px;width:100%;max-width:380px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.3)}
-  .loginbox .lg{font-size:22px;font-weight:800;color:var(--verde);margin-bottom:4px}
-  .loginbox .lgsub{font-size:13px;color:var(--suave);margin-bottom:22px}
-  .loginbox input{margin-bottom:12px}
-  .loginbox .lgbtn{width:100%;padding:15px;border:none;border-radius:14px;background:var(--terra);color:#fff;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit}
-  .loginbox .lgerro{color:var(--vermelho);font-size:13px;min-height:18px;margin-top:8px}
-  .loginbox .lgvisit{margin-top:16px;background:none;border:none;color:var(--suave);font-size:14px;text-decoration:underline;cursor:pointer;font-family:inherit}
-
-  /* faixa de status admin/visitante */
-  .statusbar{display:flex;align-items:center;gap:8px;padding:8px 16px;font-size:12px;font-weight:600}
-  .statusbar.admin{background:#e8f3ec;color:#2f7d4f}
-  .statusbar.visitante{background:var(--creme2);color:var(--suave)}
-  .statusbar .spc{flex:1}
-  .statusbar button{background:none;border:none;color:inherit;font-weight:700;text-decoration:underline;cursor:pointer;font-size:12px;font-family:inherit}
-  .syncnote{text-align:center;font-size:11px;color:var(--suave);padding:6px}
+  .viewer .fechar{position:absolute;top:calc(16px + env(safe-area-inset-top));right:20px;background:rgba(255,255,255,.18);color:#fff;border:none;width:52px;height:52px;border-radius:50%;font-size:24px;cursor:pointer}
 </style>
 </head>
 <body>
@@ -178,7 +231,9 @@
   <div class="loginbox">
     <div class="lg">Finança Ilha</div>
     <div class="lgsub">Entre como administrador pra lançar dados</div>
+    <label for="lgEmail">Email</label>
     <input id="lgEmail" type="email" placeholder="Email" autocomplete="username">
+    <label for="lgSenha">Senha</label>
     <input id="lgSenha" type="password" placeholder="Senha" autocomplete="current-password">
     <button class="lgbtn" onclick="fazerLogin()">Entrar como admin</button>
     <div class="lgerro" id="lgErro"></div>
@@ -186,34 +241,33 @@
   </div>
 </div>
 
-<header>
-  <div class="marca"><span class="pin"></span> Finança Ilha</div>
-  <h1 id="titulo">Despesas do rancho</h1>
-</header>
+<div class="aviso carregando" id="avisoNuvem">⏳ Carregando os dados da nuvem...</div>
 
-<div class="statusbar visitante" id="statusBar">
-  <span id="statusTxt">Modo visitante · só leitura</span>
-  <span class="spc"></span>
-  <button id="statusBtn" onclick="clickStatus()">Entrar como admin</button>
-</div>
+<header>
+  <div class="marca">Finança Ilha</div>
+  <h1 id="titulo">Despesas do rancho</h1>
+  <div class="statusbar visitante" id="statusBar">
+    <span id="statusTxt">Modo visitante · só leitura</span>
+    <span class="spc"></span>
+    <button id="statusBtn" onclick="clickStatus()">Entrar como admin</button>
+  </div>
+  <svg class="onda" viewBox="0 0 390 40" preserveAspectRatio="none" aria-hidden="true"><path d="M0 22 C 60 4, 120 4, 195 20 S 330 38, 390 16 L 390 40 L 0 40 Z" fill="#F4F1EA"/></svg>
+</header>
 
 <!-- LANÇAMENTOS -->
 <div class="tela on" id="telaLanc">
   <div class="cards">
-    <div class="card card-total">
+    <div class="card-total">
       <div class="lbl">Total gasto</div>
       <div class="val" id="total">R$ 0,00</div>
-    </div>
-    <div class="grid2">
-      <div class="card mini">
-        <div class="lbl">Cada cota paga</div>
-        <div class="val" id="cota">R$ 0,00</div>
-        <div class="cota-nota">dividido por 5</div>
+      <div class="divisor"></div>
+      <div class="linha-info">
+        <div><div class="li-t">Cada cota paga</div><div class="li-s">dividido por 5</div></div>
+        <div class="li-v acao" id="cota">R$ 0,00</div>
       </div>
-      <div class="card mini">
-        <div class="lbl">Lançamentos</div>
-        <div class="val" id="qtd">0</div>
-        <div class="cota-nota">no total</div>
+      <div class="linha-info">
+        <div class="li-t">Lançamentos no total</div>
+        <div class="li-v" id="qtd">0</div>
       </div>
     </div>
   </div>
@@ -245,11 +299,11 @@
     <div class="rxrow">
       <div class="rxbig">
         <div class="lbl">Receitas (Pix)</div>
-        <div class="val" id="rxReceita" style="color:#2f9e5f">R$ 0,00</div>
+        <div class="val verde" id="rxReceita">R$ 0,00</div>
       </div>
       <div class="rxbig">
         <div class="lbl">Despesas</div>
-        <div class="val" id="rxDespesa" style="color:#a63d2f">R$ 0,00</div>
+        <div class="val vermelho" id="rxDespesa">R$ 0,00</div>
       </div>
     </div>
     <div class="rxsaldo pos" id="rxSaldoCard">
@@ -259,17 +313,18 @@
     </div>
   </div>
   <div class="secao"><h2>Pix das cotas</h2><span class="cnt" id="rxPagosBadge">0/5 pagaram</span></div>
-  <div style="padding:0 16px" id="rxPixLista"></div>
-  <div class="rxcards" style="padding-top:16px">
-    <div class="rxsaldo" id="caixaCard" style="background:linear-gradient(150deg,#245239 0%,#3d6b4f 100%)">
-      <div class="lbl">💰 Caixa da ilha (acumulado)</div>
+  <div class="pixbarra" id="rxBarra"></div>
+  <div id="rxPixLista"></div>
+  <div class="rxcards" style="margin-top:22px">
+    <div class="rxsaldo caixa" id="caixaCard">
+      <div class="lbl">Caixa da ilha (acumulado)</div>
       <div class="val" id="caixaVal">R$ 0,00</div>
       <div class="sub">poupança que sobrou dos meses anteriores</div>
     </div>
   </div>
-  <div id="fecharMesArea" style="padding:16px;display:none">
-    <button onclick="fecharMes()" style="width:100%;padding:16px;border:none;border-radius:14px;background:var(--terra);color:#fff;font-size:16px;font-weight:700;font-family:inherit;cursor:pointer">🔒 Fechar mês e guardar no histórico</button>
-    <div style="font-size:12px;color:var(--suave);text-align:center;margin-top:8px;line-height:1.5">Guarda tudo desse mês na aba Meses, joga o que sobrou pro caixa e começa o próximo do zero.</div>
+  <div id="fecharMesArea" style="padding:18px;display:none">
+    <button class="btn-grande" onclick="fecharMes()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Fechar mês e guardar no histórico</button>
+    <div class="ajuda">Guarda tudo desse mês na aba Meses, joga o que sobrou pro caixa e começa o próximo do zero.</div>
   </div>
   <div style="height:20px"></div>
 </div>
@@ -280,17 +335,17 @@
 </div>
 
 <div class="rodape" id="rodape">
-  Dados salvos neste celular. Próximo passo: nuvem pros 5 sócios verem em tempo real.
+  Dados na nuvem, atualizados em tempo real pra todos os sócios.
 </div>
 
-<button class="fab" id="fab" onclick="abrir()">＋ Nova despesa</button>
+<button class="fab" id="fab" onclick="abrir()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Nova despesa</button>
 
 <div class="nav">
-  <button class="on" id="navLanc" onclick="irPara('lanc')"><span class="ni">📝</span>Lançar</button>
-  <button id="navResumo" onclick="irPara('resumo')"><span class="ni">📊</span>Resumo</button>
-  <button id="navDocs" onclick="irPara('docs')"><span class="ni">📎</span>Documentos</button>
-  <button id="navRaiox" onclick="irPara('raiox')"><span class="ni">⚖️</span>Raio-X</button>
-  <button id="navHist" onclick="irPara('hist')"><span class="ni">📅</span>Meses</button>
+  <button class="on" id="navLanc" onclick="irPara('lanc')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/></svg>Lançar</button>
+  <button id="navResumo" onclick="irPara('resumo')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg>Resumo</button>
+  <button id="navDocs" onclick="irPara('docs')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 12l6-6a3 3 0 0 1 4 4l-8 8a5 5 0 0 1-7-7l7-7"/></svg>Documentos</button>
+  <button id="navRaiox" onclick="irPara('raiox')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v16M7 20h10M4 8h16M7 8l-3 6h6l-3-6M17 8l-3 6h6l-3-6"/></svg>Raio-X</button>
+  <button id="navHist" onclick="irPara('hist')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>Meses</button>
 </div>
 
 <!-- modal despesa -->
@@ -299,9 +354,9 @@
     <h3>Nova despesa</h3>
     <label>Categoria</label>
     <div class="cats" id="catsBox"></div>
-    <label>Descrição</label>
+    <label for="inDesc">Descrição</label>
     <input id="inDesc" placeholder="Ex: Conta de energia, tinta pra reforma...">
-    <label>Valor (R$)</label>
+    <label for="inValor">Valor (R$)</label>
     <input id="inValor" type="number" inputmode="decimal" placeholder="0,00">
     <div class="btns">
       <button class="btn btn-cancel" onclick="fechar()">Cancelar</button>
@@ -315,12 +370,12 @@
   <div class="modal">
     <h3>Anexar documento</h3>
     <div class="fotoarea" id="fotoarea" onclick="document.getElementById('inFoto').click()">
-      <span class="fi">📷</span>
+      <span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span>
       Toque pra tirar foto ou escolher da galeria
     </div>
     <input id="inFoto" type="file" accept="image/*" style="display:none" onchange="carregarFoto(event)">
     <img id="fotoPrev" class="fotoprev">
-    <label>Descrição</label>
+    <label for="inDocDesc">Descrição</label>
     <input id="inDocDesc" placeholder="Ex: Nota da conta de energia">
     <label>Categoria (opcional)</label>
     <div class="cats" id="catsDocBox"></div>
@@ -338,9 +393,6 @@
 </div>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
-  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
-  import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyCc4yupdsU_zit2wj4dXgZrRaYaruvDk_8",
@@ -350,12 +402,21 @@
     messagingSenderId: "1068598796675",
     appId: "1:1068598796675:web:eb02ecf3c4188cc145d6b6"
   };
-  const fbApp = initializeApp(firebaseConfig);
-  const auth = getAuth(fbApp);
-  const db = getFirestore(fbApp);
-  const docRef = doc(db, "ilha", "dados");
+  // O Firebase é carregado só no final (ver "carrega o Firebase por último").
+  // Assim os botões funcionam desde o primeiro toque, mesmo com internet lenta.
+  let initializeApp, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut;
+  let getFirestore, doc, setDoc, getDoc, deleteDoc, onSnapshot;
+  let auth = null, db = null, docRef = null;
 
   let ehAdmin = false;
+  let carregado = false;   // só libera alteração depois que os dados da nuvem chegarem
+
+  // trava qualquer alteração se não for admin ou se os dados ainda não carregaram
+  function bloqueado(msg){
+    if(!ehAdmin){ alert(msg); return true; }
+    if(!carregado){ alert('Ainda carregando os dados da nuvem. Espera uns segundos e tenta de novo.'); return true; }
+    return false;
+  }
 
   const CATS = [
     {id:'energia', nome:'Energia', ico:'⚡', cor:'#e0a52f'},
@@ -372,11 +433,11 @@
   ];
   const COTAS = 5;
   const SOCIOS = [
-    {nome:'Valdeci', cor:'#2f7d4f'},
-    {nome:'Carlos', cor:'#3d7fb5'},
-    {nome:'Geraldo', cor:'#c47b3a'},
-    {nome:'Flavio', cor:'#8a5aa8'},
-    {nome:'Gustavo', cor:'#a63d2f'},
+    {nome:'Valdeci', cor:'#2f7d4f', claro:'#BFE5D3'},
+    {nome:'Carlos', cor:'#3d7fb5', claro:'#C9DDF7'},
+    {nome:'Geraldo', cor:'#c47b3a', claro:'#FFD9C7'},
+    {nome:'Flavio', cor:'#8a5aa8', claro:'#E4D4F5'},
+    {nome:'Gustavo', cor:'#a63d2f', claro:'#FFE9A8'},
   ];
   let despesas = [];
   let documentos = [];
@@ -388,11 +449,29 @@
   let fotoAtual = null;
   let periodo = 'ano';
 
-  const icoDe = id => (CATS.find(c=>c.id===id)||{}).ico || '📦';
+  const IC = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+  const PESSOA = '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>';
+  const ICONES = {
+    energia:'<path d="M13 3L5 14h6l-1 7 8-11h-6l1-7z"/>',
+    internet:'<path d="M3 9a14 14 0 0 1 18 0M6 12.5a9 9 0 0 1 12 0M9 16a4 4 0 0 1 6 0"/><circle cx="12" cy="19.5" r="1"/>',
+    limpeza:'<path d="M15 3l-4 9"/><path d="M7 12h8l2 9H5l2-9z"/><path d="M9 16v5M13 16v5"/>',
+    sal_ana:PESSOA, sal_marcelo:PESSOA,
+    reforma:'<path d="M15 4l5 5-3 3-5-5z"/><path d="M12 7L3 16l3 3 9-9"/>',
+    oleo:'<path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/>',
+    manutencao:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9L7 7M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>',
+    taxas:'<path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3z"/><path d="M9 8h6M9 12h6"/>',
+    contabilidade:'<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3V4z"/><path d="M5 17a3 3 0 0 1 3-3h11"/>',
+    outros:'<path d="M4 8l8-4 8 4v8l-8 4-8-4z"/><path d="M4 8l8 4 8-4M12 12v8"/>'
+  };
+  const LIXO = '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>';
+  const CHECK = '<path d="M5 12l5 5 9-10"/>';
+  const MAIS = '<path d="M12 5v14M5 12h14"/>';
+  const icoDe = id => IC(ICONES[id] || ICONES.outros);
   const nomeDe = id => (CATS.find(c=>c.id===id)||{}).nome || 'Outros gastos';
   const corDe = id => (CATS.find(c=>c.id===id)||{}).cor || '#8a8f82';
   const fmt = n => 'R$ ' + n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
   async function salvarTudo(){
+    if(!carregado){ alert('Ainda carregando os dados da nuvem. Nada foi salvo.'); return; }
     try{
       await setDoc(docRef, { despesas, documentos, pixPagos, historico, caixa });
     }catch(e){
@@ -409,7 +488,7 @@
       document.getElementById('nav'+k.charAt(0).toUpperCase()+k.slice(1)).classList.toggle('on', k===t);
     });
     document.getElementById('fab').style.display = (t==='resumo'||t==='raiox'||t==='hist') ? 'none' : 'flex';
-    document.getElementById('fab').textContent = (t==='docs') ? '＋ Anexar documento' : '＋ Nova despesa';
+    document.getElementById('fab').innerHTML = IC(MAIS) + ((t==='docs') ? 'Anexar documento' : 'Nova despesa');
     document.getElementById('fab').onclick = (t==='docs') ? abrirDoc : abrir;
     document.getElementById('titulo').textContent = t==='lanc' ? 'Despesas do rancho' : t==='resumo' ? 'Onde vai o dinheiro' : t==='docs' ? 'Documentos fiscais' : t==='raiox' ? 'Raio-X · Receitas x Despesas' : 'Meses guardados';
     document.getElementById('rodape').style.display = t==='lanc' ? 'block' : 'none';
@@ -429,36 +508,35 @@
     document.getElementById('cntBadge').textContent = despesas.length;
     const porCota = total/COTAS;
     document.getElementById('cotasGrid').innerHTML = SOCIOS.map((s,i)=>`
-      <div class="cotacard" style="background:linear-gradient(150deg,${s.cor} 0%,${s.cor}cc 100%)">
-        <div class="cnome">${s.nome}</div>
-        <div class="cval">${fmt(porCota)}</div>
+      <div class="cotacard">
+        <div class="av" style="background:${s.claro}">${s.nome.charAt(0)}</div>
+        <div style="min-width:0"><div class="cnome">${s.nome}</div><div class="cval">${fmt(porCota)}</div></div>
       </div>`).join('');
     const lista = document.getElementById('lista');
-    if(despesas.length===0){ lista.innerHTML = '<div class="vazio"><span class="big">🌾</span>Nenhuma despesa ainda.<br>Toque em “Nova despesa” pra começar.</div>'; return; }
+    if(despesas.length===0){ lista.innerHTML = '<div class="vazio">Nenhuma despesa ainda.<br>Toque em “Nova despesa” pra começar.</div>'; return; }
     lista.innerHTML = despesas.map((d,i)=>`
       <div class="item">
-        <div class="ico">${icoDe(d.cat)}</div>
-        <div class="info"><div class="desc">${d.desc||nomeDe(d.cat)}</div><div class="meta">${nomeDe(d.cat)} · ${d.data}</div></div>
-        <div class="valor">${fmt(d.valor)}</div>
-        <button class="del" onclick="apagar(${i})">✕</button>
+        <div class="ico" style="background:${corDe(d.cat)}26;color:${corDe(d.cat)}">${icoDe(d.cat)}</div>
+        <div class="info"><div class="desc">${d.desc||nomeDe(d.cat)}</div><div class="meta">${nomeDe(d.cat)} · ${d.data}</div><div class="valor">${fmt(d.valor)}</div></div>
+        ${ehAdmin?`<button class="del" aria-label="Apagar lançamento" onclick="apagar(${i})">${IC(LIXO)}</button>`:''}
       </div>`).join('');
   }
   function montarCats(alvo, sel, fn){
     document.getElementById(alvo).innerHTML = CATS.map(c=>
-      `<div class="cat ${c.id===sel?'sel':''}" onclick="${fn}('${c.id}')">${c.ico} ${c.nome}</div>`).join('');
+      `<button type="button" class="cat ${c.id===sel?'sel':''}" onclick="${fn}('${c.id}')"><i style="background:${c.cor}"></i>${c.nome}</button>`).join('');
   }
   function pickCat(id){ catSel=id; montarCats('catsBox',catSel,'pickCat'); }
   function abrir(){ catSel='energia'; montarCats('catsBox',catSel,'pickCat'); document.getElementById('inDesc').value=''; document.getElementById('inValor').value=''; document.getElementById('overlay').classList.add('on'); }
   function fechar(){ document.getElementById('overlay').classList.remove('on'); }
   function salvar(){
-    if(!ehAdmin){ alert('Só o administrador pode lançar.'); return; }
+    if(bloqueado('Só o administrador pode lançar.')) return;
     const valor = parseFloat(document.getElementById('inValor').value.replace(',','.'));
     if(!valor || valor<=0){ alert('Coloca um valor válido, chefe.'); return; }
     const hoje = new Date();
     despesas.unshift({cat:catSel, desc:document.getElementById('inDesc').value.trim(), valor, data:hoje.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}), mes:hoje.getMonth()});
     salvarLocal(); renderLanc(); fechar();
   }
-  function apagar(i){ if(!ehAdmin){ alert('Só o administrador pode apagar.'); return; } if(confirm('Apagar essa despesa?')){ despesas.splice(i,1); salvarLocal(); renderLanc(); } }
+  function apagar(i){ if(bloqueado('Só o administrador pode apagar.')) return; if(confirm('Apagar essa despesa?')){ despesas.splice(i,1); salvarLocal(); renderLanc(); } }
 
   /* resumo */
   function setPeriodo(p){
@@ -471,7 +549,7 @@
     const mesAtual = new Date().getMonth();
     const filtradas = despesas.filter(d=>{ if(periodo==='mes'){ const m=(d.mes!=null)?d.mes:(parseInt((d.data||'').split('/')[1])-1); return m===mesAtual; } return true; });
     const cont = document.getElementById('resumoConteudo');
-    if(filtradas.length===0){ cont.innerHTML = '<div class="vazio"><span class="big">📊</span>Sem despesa nesse período ainda.<br>Lança na aba “Lançar” que o gráfico aparece aqui.</div>'; return; }
+    if(filtradas.length===0){ cont.innerHTML = '<div class="vazio">Sem despesa nesse período ainda.<br>Lança na aba “Lançar” que o gráfico aparece aqui.</div>'; return; }
     const somas={}; let total=0;
     filtradas.forEach(d=>{ somas[d.cat]=(somas[d.cat]||0)+d.valor; total+=d.valor; });
     const linhas = Object.keys(somas).map(cat=>({cat,nome:nomeDe(cat),cor:corDe(cat),valor:somas[cat],pct:somas[cat]/total*100})).sort((a,b)=>b.valor-a.valor);
@@ -487,33 +565,53 @@
     const legenda = linhas.map(l=>`
       <div class="leg"><div class="dot" style="background:${l.cor}"></div>
         <div style="flex:1"><div class="n">${l.nome}</div><div class="barra"><i style="width:${l.pct}%;background:${l.cor}"></i></div></div>
-        <div class="v"><div class="r">${fmt(l.valor)}</div><div class="p">${l.pct.toFixed(1)}%</div></div>
+        <div class="v"><div class="r">${fmt(l.valor)}</div><div class="p">${l.pct.toFixed(1).replace('.',',')}%</div></div>
       </div>`).join('');
     cont.innerHTML = `
-      <div class="destaque"><div class="lbl">Maior gasto do período</div><div class="nome">${maior.nome}</div><div class="sub">${fmt(maior.valor)} · ${maior.pct.toFixed(1)}% de tudo</div></div>
+      <div class="destaque"><div class="lbl">Maior gasto do período</div><div class="nome">${maior.nome}</div><div class="sub">${fmt(maior.valor)} · ${maior.pct.toFixed(1).replace('.',',')}% de tudo</div></div>
       <div class="chartbox"><h2>Gasto por categoria</h2>
         <svg viewBox="0 0 200 200">${paths}<text x="100" y="94" text-anchor="middle" class="centro-total">Total</text><text x="100" y="114" text-anchor="middle" class="centro-valor">${fmt(total).replace('R$ ','R$')}</text></svg></div>
       <div class="legenda">${legenda}</div><div style="height:20px"></div>`;
   }
 
-  /* documentos */
+  /* documentos — cada foto fica num documento separado na nuvem (ilha/foto_<id>),
+     assim o documento principal continua leve e nunca estoura o limite de 1 MB */
+  const fotoCache = {};
+  const novoId = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+  function fotoDe(d){ return (d && (d.foto || fotoCache[d.id])) || ''; }
+  async function buscarFoto(id){
+    if(!id) return '';
+    if(fotoCache[id]) return fotoCache[id];
+    try{
+      const s = await getDoc(doc(db,'ilha','foto_'+id));
+      if(s.exists()){ fotoCache[id] = s.data().foto; return fotoCache[id]; }
+    }catch(e){ console.log('erro foto', e); }
+    return '';
+  }
   function renderDocs(){
     document.getElementById('docBadge').textContent = documentos.length;
     const cont = document.getElementById('docsConteudo');
-    if(documentos.length===0){ cont.innerHTML = '<div class="vazio"><span class="big">📎</span>Nenhum documento ainda.<br>Toque em “Anexar documento” pra guardar uma nota ou comprovante.</div>'; return; }
+    if(documentos.length===0){ cont.innerHTML = '<div class="vazio">Nenhum documento ainda.<br>Toque em “Anexar documento” pra guardar uma nota ou comprovante.</div>'; return; }
     cont.innerHTML = '<div class="docgrid">' + documentos.map((d,i)=>`
       <div class="doc">
-        <button class="dapaga" onclick="apagarDoc(${i})">✕</button>
-        <img src="${d.foto}" onclick="verFoto('${i}')">
+        ${ehAdmin?`<button class="dapaga" aria-label="Apagar documento" onclick="apagarDoc(${i})">${IC(LIXO)}</button>`:''}
+        <img id="img_${d.id||('i'+i)}" src="${fotoDe(d)}" onclick="verFoto('${i}')">
         <div class="dinfo">
           <div class="dtit">${d.desc||'Documento'}</div>
           <div class="ddata">${d.data}</div>
           ${d.cat?`<span class="dtag">${icoDe(d.cat)} ${nomeDe(d.cat)}</span>`:''}
         </div>
       </div>`).join('') + '</div><div style="height:20px"></div>';
+    // busca só as fotos que ainda não estão no celular
+    documentos.forEach(d=>{
+      if(!fotoDe(d) && d.id){
+        buscarFoto(d.id).then(f=>{ const el=document.getElementById('img_'+d.id); if(el && f) el.src=f; });
+      }
+    });
   }
   function pickCatDoc(id){ catDocSel = (catDocSel===id)?'':id; montarCats('catsDocBox',catDocSel,'pickCatDoc'); }
   function abrirDoc(){
+    if(bloqueado('Só o administrador pode anexar.')) return;
     catDocSel=''; fotoAtual=null; montarCats('catsDocBox',catDocSel,'pickCatDoc');
     document.getElementById('inDocDesc').value='';
     document.getElementById('fotoPrev').style.display='none';
@@ -527,14 +625,16 @@
     reader.onload = e=>{
       const img = new Image();
       img.onload = ()=>{
-        // comprime pra caber no armazenamento do celular
         const max = 1200;
         let {width,height} = img;
         if(width>max || height>max){ const s = max/Math.max(width,height); width*=s; height*=s; }
         const canvas = document.createElement('canvas');
         canvas.width=width; canvas.height=height;
         canvas.getContext('2d').drawImage(img,0,0,width,height);
-        fotoAtual = canvas.toDataURL('image/jpeg', 0.7);
+        // comprime e, se ainda ficar grande, aperta mais (limite de segurança ~700 KB)
+        let q = 0.7;
+        fotoAtual = canvas.toDataURL('image/jpeg', q);
+        while(fotoAtual.length > 700000 && q > 0.3){ q -= 0.15; fotoAtual = canvas.toDataURL('image/jpeg', q); }
         const prev = document.getElementById('fotoPrev');
         prev.src = fotoAtual; prev.style.display='block';
       };
@@ -542,26 +642,69 @@
     };
     reader.readAsDataURL(file);
   }
-  function salvarDoc(){
-    if(!ehAdmin){ alert('Só o administrador pode anexar.'); return; }
+  let enviandoFoto = false;
+  async function salvarDoc(){
+    if(bloqueado('Só o administrador pode anexar.')) return;
     if(!fotoAtual){ alert('Escolhe uma foto primeiro.'); return; }
-    const hoje = new Date();
-    documentos.unshift({foto:fotoAtual, desc:document.getElementById('inDocDesc').value.trim(), cat:catDocSel, data:hoje.toLocaleDateString('pt-BR')});
+    if(enviandoFoto) return;
+    enviandoFoto = true;
+    const id = novoId();
+    try{
+      await setDoc(doc(db,'ilha','foto_'+id), { foto: fotoAtual });
+    }catch(e){
+      enviandoFoto = false;
+      alert('Não consegui enviar a foto. Confere a internet e tenta de novo. (' + (e.code||e.message) + ')');
+      return;
+    }
+    fotoCache[id] = fotoAtual;
+    documentos.unshift({ id, desc:document.getElementById('inDocDesc').value.trim(), cat:catDocSel, data:new Date().toLocaleDateString('pt-BR') });
+    enviandoFoto = false;
     salvarDocs();
     renderDocs(); fecharDoc();
   }
-  function apagarDoc(i){ if(!ehAdmin){ alert('Só o administrador pode apagar.'); return; } if(confirm('Apagar esse documento?')){ documentos.splice(i,1); salvarDocs(); renderDocs(); } }
-  function verFoto(i){ document.getElementById('viewerImg').src = documentos[i].foto; document.getElementById('viewer').classList.add('on'); }
+  function apagarDoc(i){
+    if(bloqueado('Só o administrador pode apagar.')) return;
+    if(confirm('Apagar esse documento?')){
+      const d = documentos[i];
+      documentos.splice(i,1); salvarDocs(); renderDocs();
+      if(d && d.id){ delete fotoCache[d.id]; deleteDoc(doc(db,'ilha','foto_'+d.id)).catch(()=>{}); }
+    }
+  }
+  async function verFoto(i){
+    const d = documentos[i]; if(!d) return;
+    let f = fotoDe(d);
+    if(!f && d.id) f = await buscarFoto(d.id);
+    if(!f){ alert('A foto ainda está carregando, tenta de novo em instantes.'); return; }
+    document.getElementById('viewerImg').src = f;
+    document.getElementById('viewer').classList.add('on');
+  }
+  // fotos antigas que ficaram dentro do documento principal: o admin move pra fora automaticamente
+  let migrando = false;
+  async function migrarFotosAntigas(){
+    if(!ehAdmin || !carregado || migrando) return;
+    const antigos = documentos.filter(d=>d.foto);
+    if(antigos.length===0) return;
+    migrando = true;
+    try{
+      for(const d of antigos){
+        const id = d.id || novoId();
+        await setDoc(doc(db,'ilha','foto_'+id), { foto: d.foto });
+        fotoCache[id] = d.foto; d.id = id; delete d.foto;
+      }
+      await salvarTudo();
+    }catch(e){ console.log('migração de fotos', e); }
+    migrando = false;
+  }
   function fecharViewer(){ document.getElementById('viewer').classList.remove('on'); }
 
   /* raio-x */
-  function togglePix(i){ if(!ehAdmin){ alert('Só o administrador pode marcar os Pix.'); return; } pixPagos[i] = !pixPagos[i]; salvarTudo(); renderRaiox(); }
+  function togglePix(i){ if(bloqueado('Só o administrador pode marcar os Pix.')) return; pixPagos[i] = !pixPagos[i]; salvarTudo(); renderRaiox(); }
   function renderRaiox(){
     const totalDespesa = despesas.reduce((s,d)=>s+d.valor,0);
     const porCota = totalDespesa/COTAS;
     let recebido = 0;
     pixPagos.forEach((pago,i)=>{ if(pago) recebido += porCota; });
-    const saldo = recebido - totalDespesa;
+    const saldo = Math.round((recebido - totalDespesa)*100)/100;
     const nPagos = pixPagos.filter(Boolean).length;
 
     document.getElementById('rxReceita').textContent = fmt(recebido);
@@ -575,12 +718,12 @@
       ? (nPagos<COTAS ? 'faltam '+(COTAS-nPagos)+' cota(s) pra fechar o mês' : 'todos pagaram, contas cobertas')
       : 'ainda falta receber pra cobrir as despesas';
 
+    document.getElementById('rxBarra').innerHTML = SOCIOS.map((s,i)=>`<i class="${pixPagos[i]?'ok':''}"></i>`).join('');
     document.getElementById('rxPixLista').innerHTML = SOCIOS.map((s,i)=>`
       <div class="pixitem">
-        <span class="pixdot" style="background:${pixPagos[i]?'#2f9e5f':'#d8d0bd'}"></span>
-        <span class="pn">${s.nome}</span>
-        <span class="pv">${fmt(porCota)}</span>
-        <button class="pixbtn ${pixPagos[i]?'pago':'pend'}" onclick="togglePix(${i})">${pixPagos[i]?'✓ Pago':'Pendente'}</button>
+        <div class="av" style="background:${s.claro}">${s.nome.charAt(0)}</div>
+        <div style="flex:1;min-width:0"><div class="pn">${s.nome}</div><div class="pv">${fmt(porCota)}</div></div>
+        <button class="pixbtn ${pixPagos[i]?'pago':'pend'}" onclick="togglePix(${i})">${pixPagos[i]?IC(CHECK)+'Pago':'Pendente'}</button>
       </div>`).join('');
 
     document.getElementById('caixaVal').textContent = fmt(caixa);
@@ -588,7 +731,7 @@
   }
 
   function fecharMes(){
-    if(!ehAdmin){ alert('Só o administrador pode fechar o mês.'); return; }
+    if(bloqueado('Só o administrador pode fechar o mês.')) return;
     if(despesas.length===0){ alert('Não tem nada lançado nesse mês pra fechar.'); return; }
     const totalDespesa = despesas.reduce((s,d)=>s+d.valor,0);
     const porCota = totalDespesa/COTAS;
@@ -626,7 +769,7 @@
     renderHist();
   }
   function apagarMes(i){
-    if(!ehAdmin){ alert('Só o administrador pode apagar um mês.'); return; }
+    if(bloqueado('Só o administrador pode apagar um mês.')) return;
     if(confirm('Apagar o mês "'+historico[i].rotulo+'" do histórico? O caixa não muda.')){
       historico.splice(i,1);
       compSel = [];
@@ -636,28 +779,27 @@
   function renderHist(){
     const cont = document.getElementById('histConteudo');
     if(historico.length===0){
-      cont.innerHTML = '<div class="vazio"><span class="big">📅</span>Nenhum mês guardado ainda.<br>No Raio-X, use “Fechar mês” quando o mês acabar.</div>';
+      cont.innerHTML = '<div class="vazio">Nenhum mês guardado ainda.<br>No Raio-X, use “Fechar mês” quando o mês acabar.</div>';
       return;
     }
+    const fmtN = v => fmt(v).replace('R$','').trim();
     // caixa no topo
-    let html = `<div class="rxcards"><div class="rxsaldo" style="background:linear-gradient(150deg,#245239 0%,#3d6b4f 100%)">
-      <div class="lbl">💰 Caixa da ilha (acumulado)</div>
-      <div class="val">${fmt(caixa)}</div>
-      <div class="sub">${historico.length} ${historico.length===1?'mês guardado':'meses guardados'}</div>
+    let html = `<div class="cards"><div class="card-total">
+      <div class="lbl">Caixa da ilha (acumulado)</div>
+      <div class="val caixa-val">${fmt(caixa)}</div>
+      <div class="li-s">${historico.length} ${historico.length===1?'mês guardado':'meses guardados'}</div>
     </div></div>`;
 
-    html += '<div class="secao"><h2>Toque em 2 meses pra comparar</h2></div>';
-    html += '<div style="padding:0 16px">';
+    html += '<div class="secao"><h2>Toque em 2 meses pra comparar</h2></div><div class="meslista">';
     historico.forEach((m,i)=>{
       const sel = compSel.includes(i);
-      const cor = m.saldo>=0 ? '#2f9e5f' : '#a63d2f';
-      html += `<div class="pixitem" style="border-color:${sel?'var(--terra)':'var(--linha)'};border-width:${sel?'2px':'1px'}">
-        <span class="pixdot" style="background:${sel?'var(--terra)':'#d8d0bd'}"></span>
-        <div style="flex:1" onclick="toggleComp(${i})">
-          <div class="pn">${m.rotulo}</div>
-          <div style="font-size:12px;color:var(--suave)">Gasto ${fmt(m.totalDespesa)} · sobra <span style="color:${cor};font-weight:700">${(m.saldo<0?'-':'')+fmt(Math.abs(m.saldo))}</span></div>
-        </div>
-        ${ehAdmin?`<button class="del" onclick="apagarMes(${i})">✕</button>`:''}
+      const cor = m.saldo>=0 ? 'var(--verde)' : 'var(--vermelho)';
+      html += `<div class="mesrow">
+        <button class="mesitem ${sel?'sel':''}" onclick="toggleComp(${i})">
+          <span class="chk">${sel?IC(CHECK):''}</span>
+          <span class="mt"><span class="mn">${m.rotulo}</span><span class="ms">Gasto ${fmt(m.totalDespesa)} · sobra <b style="color:${cor}">${(m.saldo<0?'-':'')+fmt(Math.abs(m.saldo))}</b></span></span>
+        </button>
+        ${ehAdmin?`<button class="del" aria-label="Apagar mês" onclick="apagarMes(${i})">${IC(LIXO)}</button>`:''}
       </div>`;
     });
     html += '</div>';
@@ -665,36 +807,26 @@
     // comparação lado a lado
     if(compSel.length===2){
       const a = historico[compSel[0]], b = historico[compSel[1]];
-      const linha = (lbl,va,vb,ehDin=true)=>{
-        const fa = ehDin?fmt(va):va, fb = ehDin?fmt(vb):vb;
-        return `<div style="display:flex;padding:11px 14px;border-bottom:1px solid var(--linha)">
-          <div style="flex:1;font-size:14px;color:var(--suave)">${lbl}</div>
-          <div style="width:34%;text-align:right;font-weight:700;font-size:14px">${fa}</div>
-          <div style="width:34%;text-align:right;font-weight:700;font-size:14px">${fb}</div>
-        </div>`;
-      };
+      const linha = (lbl,va,vb,cls='') => `<div class="cl ${cls}"><div class="k">${lbl}</div><div class="c">${fmtN(va)}</div><div class="c">${fmtN(vb)}</div></div>`;
       // por categoria
       const cats = {};
       a.despesas.forEach(d=>{ cats[d.cat]=cats[d.cat]||[0,0]; cats[d.cat][0]+=d.valor; });
       b.despesas.forEach(d=>{ cats[d.cat]=cats[d.cat]||[0,0]; cats[d.cat][1]+=d.valor; });
-      let catRows = Object.keys(cats).sort((x,y)=>(cats[y][0]+cats[y][1])-(cats[x][0]+cats[x][1]))
-        .map(c=>linha(nomeDe(c), cats[c][0], cats[c][1])).join('');
+      const catRows = Object.keys(cats).sort((x,y)=>(cats[y][0]+cats[y][1])-(cats[x][0]+cats[x][1]))
+        .map(c=>linha(nomeDe(c), cats[c][0], cats[c][1], 'cat')).join('');
 
       html += `<div class="secao"><h2>Comparação</h2></div>
-        <div style="margin:0 16px;background:#fff;border:1px solid var(--linha);border-radius:16px;overflow:hidden;box-shadow:0 2px 6px rgba(40,50,35,.05)">
-          <div style="display:flex;padding:12px 14px;background:var(--creme2)">
-            <div style="flex:1"></div>
-            <div style="width:34%;text-align:right;font-weight:800;font-size:13px;color:var(--verde)">${a.rotulo}</div>
-            <div style="width:34%;text-align:right;font-weight:800;font-size:13px;color:var(--verde)">${b.rotulo}</div>
-          </div>
+        <div class="comp">
+          <div class="cl cab"><div class="k"></div><div class="c">${a.rotulo}</div><div class="c">${b.rotulo}</div></div>
           ${linha('Total de despesas', a.totalDespesa, b.totalDespesa)}
           ${linha('Recebido (Pix)', a.recebido, b.recebido)}
-          ${linha('Sobrou no mês', a.saldo, b.saldo)}
-          <div style="padding:10px 14px;background:var(--creme2);font-size:12px;font-weight:700;color:var(--suave);text-transform:uppercase;letter-spacing:.5px">Por categoria</div>
+          ${linha('Sobrou no mês', a.saldo, b.saldo, 'sobra')}
+          <div class="sub">Por categoria</div>
           ${catRows}
-        </div><div style="height:20px"></div>`;
+        </div>
+        <div class="ajuda">Valores em reais (R$)</div><div style="height:20px"></div>`;
     } else {
-      html += `<div style="text-align:center;color:var(--suave);font-size:13px;padding:18px">Selecione ${2-compSel.length} mês(es) pra ver a comparação.</div>`;
+      html += `<div class="ajuda" style="padding:18px">Selecione ${2-compSel.length} mês(es) pra ver a comparação.</div>`;
     }
     cont.innerHTML = html;
   }
@@ -705,7 +837,7 @@
     const fab = document.getElementById('fab');
     if(ehAdmin){
       bar.className = 'statusbar admin';
-      document.getElementById('statusTxt').textContent = '● Administrador · pode lançar e editar';
+      document.getElementById('statusTxt').textContent = 'Administrador · pode lançar e editar';
       document.getElementById('statusBtn').textContent = 'Sair';
       fab.style.visibility = 'visible';
     } else {
@@ -714,6 +846,7 @@
       document.getElementById('statusBtn').textContent = 'Entrar como admin';
       fab.style.visibility = 'hidden';
     }
+    renderLanc();
     if(document.getElementById('telaRaiox').classList.contains('on')) renderRaiox();
     if(document.getElementById('telaHist').classList.contains('on')) renderHist();
   }
@@ -726,33 +859,57 @@
     const email = document.getElementById('lgEmail').value.trim();
     const senha = document.getElementById('lgSenha').value;
     document.getElementById('lgErro').textContent = '';
+    if(!auth){ document.getElementById('lgErro').textContent = 'Ainda conectando com a nuvem. Espera uns segundos e tenta de novo.'; return; }
     signInWithEmailAndPassword(auth, email, senha)
       .then(()=>{ document.getElementById('loginWrap').classList.remove('on'); document.getElementById('lgSenha').value=''; })
       .catch(e=>{ document.getElementById('lgErro').textContent = 'Email ou senha errados.'; });
   };
   window.entrarVisitante = function(){ document.getElementById('loginWrap').classList.remove('on'); };
 
+  const aviso = (tipo, txt) => { const a=document.getElementById('avisoNuvem'); a.className='aviso '+tipo; if(txt) a.textContent=txt; };
+
+  function ligarNuvem(){
   onAuthStateChanged(auth, user=>{
     ehAdmin = !!user;
     aplicarPapel();
+    if(document.getElementById('telaDocs').classList.contains('on')) renderDocs();
+    migrarFotosAntigas();
   });
 
   // escuta a nuvem em tempo real: qualquer mudança do admin aparece pra todos
-  onSnapshot(docRef, snap=>{
+  onSnapshot(docRef, { includeMetadataChanges: true }, snap=>{
+    // sem internet na abertura o Firebase devolve "vazio do cache": isso NÃO é dado real
+    if(!snap.exists() && snap.metadata.fromCache){
+      if(!carregado) aviso('erro','📡 Sem conexão com a nuvem. Os valores abaixo NÃO são os reais. Confere a internet.');
+      return;
+    }
     const d = snap.data() || {};
     despesas = d.despesas || [];
     documentos = d.documentos || [];
     pixPagos = d.pixPagos || [false,false,false,false,false];
     historico = d.historico || [];
     caixa = d.caixa || 0;
+    carregado = true;
+    if(navigator.onLine===false) aviso('erro','📡 Sem internet. Mostrando os últimos dados recebidos.');
+    else aviso('ok','');
     renderLanc();
     if(document.getElementById('telaResumo').classList.contains('on')) renderResumo();
     if(document.getElementById('telaDocs').classList.contains('on')) renderDocs();
     if(document.getElementById('telaRaiox').classList.contains('on')) renderRaiox();
     if(document.getElementById('telaHist').classList.contains('on')) renderHist();
+    migrarFotosAntigas();
   }, err=>{
     console.log('erro nuvem', err);
+    if(err && err.code==='permission-denied'){
+      aviso('erro','⚠️ A nuvem recusou a leitura (regras do Firebase). Os valores abaixo NÃO são os reais.');
+    } else {
+      aviso('erro','⚠️ Não consegui carregar os dados da nuvem. Confere a internet e reabre o app.');
+    }
   });
+  }
+  window.addEventListener('offline', ()=>aviso('erro','📡 Sem internet. Mostrando os últimos dados recebidos.'));
+  window.addEventListener('online', ()=>{ if(carregado) aviso('ok',''); });
+
 
   // expõe as funções usadas no onclick do HTML
   window.irPara=irPara; window.abrir=abrir; window.fechar=fechar; window.salvar=salvar;
@@ -767,6 +924,28 @@
   montarCats('catsBox',catSel,'pickCat');
   aplicarPapel();
   renderLanc();
+
+  // carrega o Firebase por último: os botões já funcionam enquanto ele baixa
+  (async ()=>{
+    try{
+      const [mApp, mAuth, mDb] = await Promise.all([
+        import("https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js"),
+        import("https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js"),
+        import("https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js")
+      ]);
+      ({ initializeApp } = mApp);
+      ({ getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } = mAuth);
+      ({ getFirestore, doc, setDoc, getDoc, deleteDoc, onSnapshot } = mDb);
+      const fbApp = initializeApp(firebaseConfig);
+      auth = getAuth(fbApp);
+      db = getFirestore(fbApp);
+      docRef = doc(db, "ilha", "dados");
+      ligarNuvem();
+    }catch(e){
+      console.log('Firebase não carregou', e);
+      aviso('erro','⚠️ Não consegui conectar com a nuvem. Confere a internet e reabre o app.');
+    }
+  })();
 </script>
 </body>
 </html>
